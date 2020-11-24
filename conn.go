@@ -15,7 +15,7 @@ type Connection interface {
 	GetPeerConnection() *webrtc.PeerConnection
 	SetPeerConnection(pc *webrtc.PeerConnection)
 	Close() error
-	HandleMessage(Message) error
+	HandleMessage(*Message) error
 	Emit(string, interface{})
 	GetOptions() ConnectionOptions
 }
@@ -65,51 +65,52 @@ type BaseConnection struct {
 }
 
 // GetOptions return the connection configuration
-func (c BaseConnection) GetOptions() ConnectionOptions {
+func (c *BaseConnection) GetOptions() ConnectionOptions {
 	return c.opts
 }
 
 // GetMetadata return the connection metadata
-func (c BaseConnection) GetMetadata() interface{} {
+func (c *BaseConnection) GetMetadata() interface{} {
 	return c.Metadata
 }
 
 // GetPeerConnection return the underlying WebRTC PeerConnection
-func (c BaseConnection) GetPeerConnection() *webrtc.PeerConnection {
+func (c *BaseConnection) GetPeerConnection() *webrtc.PeerConnection {
 	return c.PeerConnection
 }
 
 // SetPeerConnection set the underlying WebRTC PeerConnection
-func (c BaseConnection) SetPeerConnection(pc *webrtc.PeerConnection) {
+func (c *BaseConnection) SetPeerConnection(pc *webrtc.PeerConnection) {
 	c.PeerConnection = pc
+	c.log.Debugf("%v", c.PeerConnection)
 }
 
 // GetID return the connection ID
-func (c BaseConnection) GetID() string {
+func (c *BaseConnection) GetID() string {
 	return c.id
 }
 
 // GetPeerID return the connection peer ID
-func (c BaseConnection) GetPeerID() string {
+func (c *BaseConnection) GetPeerID() string {
 	return c.peerID
 }
 
 // Close closes the data connection
-func (c BaseConnection) Close() error {
+func (c *BaseConnection) Close() error {
 	panic("Not implemented!")
 }
 
 // HandleMessage handles incoming messages
-func (c BaseConnection) HandleMessage(msg Message) error {
+func (c *BaseConnection) HandleMessage(msg *Message) error {
 	panic("Not implemented!")
 }
 
 // GetType return the connection type
-func (c BaseConnection) GetType() string {
+func (c *BaseConnection) GetType() string {
 	return c.Type
 }
 
 // GetProvider return the peer provider
-func (c BaseConnection) GetProvider() *Peer {
+func (c *BaseConnection) GetProvider() *Peer {
 	return c.Provider
 }

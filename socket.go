@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -13,15 +14,15 @@ import (
 // SocketEvent carries an event from the socket
 type SocketEvent struct {
 	Type    string
-	Message Message
+	Message *Message
 	Error   error
 }
 
 //NewSocket create a socket instance
 func NewSocket(opts Options) Socket {
 	s := Socket{
-		log:    createLogger("socket", opts.Debug),
-		Events: make(chan SocketEvent),
+		Emitter: NewEmitter(),
+		log:     createLogger("socket", opts.Debug),
 	}
 	s.opts = opts
 	s.disconnected = true
@@ -30,13 +31,14 @@ func NewSocket(opts Options) Socket {
 
 //Socket abstract websocket exposing an event emitter like interface
 type Socket struct {
+	Emitter
 	id           string
 	opts         Options
 	baseURL      string
 	disconnected bool
 	conn         *websocket.Conn
 	log          *logrus.Entry
-	Events       chan SocketEvent
+	mutex        sync.Mutex
 }
 
 func (s *Socket) buildBaseURL() string {
@@ -74,12 +76,12 @@ func (s *Socket) Start(id string, token string) error {
 	}
 	s.conn = c
 
-	s.conn.SetCloseHandler(func(code int, text string) error {
-		s.log.Debug("Called close handler")
-		s.disconnected = true
-		s.emit(SocketEventTypeDisconnected, nil, nil)
-		return nil
-	})
+	// s.conn.SetCloseHandler(func(code int, text string) error {
+	// 	s.log.Debug("Called close handler")
+	// 	s.disconnected = true
+	// 	s.Emit(SocketEventTypeDisconnected, SocketEvent{SocketEventTypeDisconnected, nil, nil})
+	// 	return nil
+	// })
 
 	//  ws ping
 	go func() {
@@ -91,9 +93,15 @@ func (s *Socket) Start(id string, token string) error {
 		for {
 			select {
 			case <-ticker.C:
-				if err := s.conn.WriteMessage(websocket.PingMessage, []byte{}); err != nil {
+				if s.conn == nil {
 					return
 				}
+				s.mutex.Lock()
+				if err := s.conn.WriteMessage(websocket.PingMessage, []byte{}); err != nil {
+					s.mutex.Unlock()
+					return
+				}
+				s.mutex.Unlock()
 				break
 			}
 		}
@@ -102,37 +110,41 @@ func (s *Socket) Start(id string, token string) error {
 	// collect messages
 	go func() {
 		for {
-			if s.disconnected {
+			if s.conn == nil {
 				return
 			}
-			msgType, raw, err := c.ReadMessage()
+
+			msgType, raw, err := s.conn.ReadMessage()
 			if err != nil {
+				if ce, ok := err.(*websocket.CloseError); ok {
+					switch ce.Code {
+					case websocket.CloseNormalClosure,
+						websocket.CloseGoingAway,
+						websocket.CloseNoStatusReceived:
+						return
+					}
+				}
 				s.log.Warnf("WS read error: %s", err)
-				return
+				continue
 			}
 
 			s.log.Infof("WS recv: %d %s", msgType, raw)
 
 			if msgType == websocket.TextMessage {
 
-				msg := BaseMessage{}
+				msg := Message{}
 				err = json.Unmarshal(raw, &msg)
 				if err != nil {
-					s.log.Errorf("Failed to decode Message: %s", err)
+					s.log.Errorf("Failed to decode message=%s %s", string(raw), err)
 				}
 
-				s.emit(SocketEventTypeMessage, msg, nil)
+				s.Emit(SocketEventTypeMessage, SocketEvent{SocketEventTypeMessage, &msg, err})
 			}
 
 		}
 	}()
 
 	return nil
-}
-
-//Close close the websocket connection
-func (s *Socket) emit(eventType string, msg Message, err error) {
-	s.Events <- SocketEvent{eventType, msg, err}
 }
 
 //Close close the websocket connection
@@ -158,8 +170,10 @@ func (s *Socket) Close() error {
 
 //Send send a message
 func (s *Socket) Send(msg []byte) error {
-	if s.disconnected {
+	if s.conn == nil {
 		return nil
 	}
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 	return s.conn.WriteMessage(websocket.TextMessage, msg)
 }

@@ -94,13 +94,20 @@ func (n *Negotiator) setupListeners(peerConnection *webrtc.PeerConnection) {
 
 	peerID := n.connection.GetPeerID()
 	connectionID := n.connection.GetID()
-	connectionType := n.connection.GetType()
 	provider := n.connection.GetProvider()
 
-	// ICE CANDIDATES.
 	n.log.Debug("Listening for ICE candidates.")
-
 	peerConnection.OnICECandidate(func(evt *webrtc.ICECandidate) {
+
+		peerID := n.connection.GetPeerID()
+		connectionID := n.connection.GetID()
+		connectionType := n.connection.GetType()
+		provider := n.connection.GetProvider()
+
+		if evt == nil {
+			n.log.Debugf("ICECandidate gathering completed for peer=%s conn=%s", peerID, connectionID)
+			return
+		}
 
 		candidate := evt.ToJSON()
 
@@ -110,9 +117,9 @@ func (n *Negotiator) setupListeners(peerConnection *webrtc.PeerConnection) {
 
 		n.log.Debugf("Received ICE candidates for %s: %s", peerID, candidate.Candidate)
 
-		msg := BaseMessage{
+		msg := Message{
 			Type: ServerMessageTypeCandidate,
-			Payload: MessagePayload{
+			Payload: Payload{
 				Candidate:    candidate.Candidate,
 				Type:         connectionType,
 				ConnectionID: connectionID,
@@ -122,9 +129,13 @@ func (n *Negotiator) setupListeners(peerConnection *webrtc.PeerConnection) {
 
 		res, err := json.Marshal(msg)
 		if err != nil {
-			n.log.Error("OnICECandidate: Failed to serialize message: %s", err)
+			n.log.Errorf("OnICECandidate: Failed to serialize message: %s", err)
 		}
-		provider.GetSocket().Send(res)
+
+		err = provider.GetSocket().Send(res)
+		if err != nil {
+			n.log.Errorf("OnICECandidate: Failed to send message: %s", err)
+		}
 
 	})
 
@@ -179,7 +190,7 @@ func (n *Negotiator) setupListeners(peerConnection *webrtc.PeerConnection) {
 		if ok {
 			if connection.GetType() == ConnectionTypeMedia {
 				mediaConnection := connection.(*MediaConnection)
-				n.log.Debugf("add stream %s to media connection", tr.ID, mediaConnection.GetID())
+				n.log.Debugf("add stream %s to media connection %s", tr.ID(), mediaConnection.GetID())
 				mediaConnection.AddStream(tr)
 			}
 		}
@@ -231,16 +242,14 @@ func (n *Negotiator) makeOffer() error {
 		OfferAnswerOptions: webrtc.OfferAnswerOptions{
 			// VoiceActivityDetection: true,
 		},
-		ICERestart: true,
+		ICERestart: false,
 	})
-
 	if err != nil {
 		err1 := fmt.Errorf("makeOffer: Failed to create offer: %s", err)
 		n.log.Warn(err1)
 		provider.EmitError(PeerErrorTypeWebRTC, err1)
 		return err
 	}
-
 	n.log.Debug("Created offer")
 
 	connOpts := n.connection.GetOptions()
@@ -257,16 +266,14 @@ func (n *Negotiator) makeOffer() error {
 		return err
 	}
 
-	n.log.Debugf("Set localDescription: %s for:%s", offer, n.connection.GetPeerID())
+	n.log.Debugf("Set localDescription: %s for:%s", offer.SDP, n.connection.GetPeerID())
 
-	payload := ExchangePayload{
-		MessagePayload: MessagePayload{
-			Type:         n.connection.GetType(),
-			ConnectionID: n.connection.GetID(),
-			Metadata:     n.connection.GetMetadata(),
-		},
-		SDP:     offer,
-		Browser: DefaultBrowser,
+	payload := Payload{
+		Type:         n.connection.GetType(),
+		ConnectionID: n.connection.GetID(),
+		Metadata:     n.connection.GetMetadata(),
+		SDP:          &offer,
+		Browser:      DefaultBrowser,
 	}
 
 	if n.connection.GetType() == ConnectionTypeData {
@@ -276,11 +283,9 @@ func (n *Negotiator) makeOffer() error {
 		payload.Serialization = dataConnection.Serialization
 	}
 
-	msg := ExchangeMessage{
-		BaseMessage: BaseMessage{
-			Type: ServerMessageTypeOffer,
-			Dst:  n.connection.GetPeerID(),
-		},
+	msg := Message{
+		Type:    ServerMessageTypeOffer,
+		Dst:     n.connection.GetPeerID(),
 		Payload: payload,
 	}
 
@@ -335,20 +340,16 @@ func (n *Negotiator) makeAnswer() error {
 		return err
 	}
 
-	n.log.Debugf(`Set localDescription: %s for %s`, answer, n.connection.GetPeerID())
+	n.log.Debugf(`Set localDescription: %s for %s`, answer.SDP, n.connection.GetPeerID())
 
-	msg := ExchangeMessage{
-		BaseMessage: BaseMessage{
-			Type: ServerMessageTypeAnswer,
-			Dst:  n.connection.GetPeerID(),
-		},
-		Payload: ExchangePayload{
-			MessagePayload: MessagePayload{
-				Type:         n.connection.GetType(),
-				ConnectionID: n.connection.GetID(),
-			},
-			SDP:     answer,
-			Browser: DefaultBrowser,
+	msg := Message{
+		Type: ServerMessageTypeAnswer,
+		Dst:  n.connection.GetPeerID(),
+		Payload: Payload{
+			Type:         n.connection.GetType(),
+			ConnectionID: n.connection.GetID(),
+			SDP:          &answer,
+			Browser:      DefaultBrowser,
 		},
 	}
 
@@ -399,18 +400,19 @@ func (n *Negotiator) handleSDP(sdpType string, sdp webrtc.SessionDescription) er
 	return nil
 }
 
-// Handle a candidate
-func (n *Negotiator) handleCandidate(ice *webrtc.ICECandidate) error {
+// HandleCandidate handles a candidate
+func (n *Negotiator) HandleCandidate(iceInit webrtc.ICECandidateInit) error {
 
-	n.log.Debugf(`handleCandidate: %v`, ice)
+	n.log.Debugf(`HandleCandidate: %v`, iceInit)
 
 	// candidate := ice.ToJSON().Candidate
 	// sdpMLineIndex := ice.ToJSON().SDPMLineIndex
 	// sdpMid := ice.ToJSON().SDPMid
+
 	peerConnection := n.connection.GetPeerConnection()
 	provider := n.connection.GetProvider()
 
-	err := peerConnection.AddICECandidate(ice.ToJSON())
+	err := peerConnection.AddICECandidate(iceInit)
 	if err != nil {
 		provider.EmitError(PeerErrorTypeWebRTC, err)
 		n.log.Errorf("handleCandidate: %s", err)

@@ -17,12 +17,15 @@ const (
 )
 
 // NewDataConnection create new DataConnection
-func NewDataConnection(id string, peer *Peer, opts ConnectionOptions) (*DataConnection, error) {
+func NewDataConnection(peerID string, peer *Peer, opts ConnectionOptions) (*DataConnection, error) {
 
 	d := &DataConnection{
 		BaseConnection: newBaseConnection(ConnectionTypeData, peer, opts),
 		buffer:         bytes.NewBuffer([]byte{}),
+		encodingQueue:  NewEncodingQueue(),
 	}
+
+	d.peerID = peerID
 
 	d.id = opts.ConnectionID
 	if d.id == "" {
@@ -64,7 +67,6 @@ type DataConnection struct {
 	bufferSize    int
 	buffering     bool
 	chunkedData   map[int]chunkedData
-	DataChannel   *webrtc.DataChannel
 	encodingQueue *EncodingQueue
 }
 
@@ -112,10 +114,16 @@ func (d *DataConnection) configureDataChannel() {
 
 // Handles a DataChannel message.
 func (d *DataConnection) handleDataMessage(msg webrtc.DataChannelMessage) {
-	panic("TODO")
-	// const datatype = data.constructor;
+
 	// isBinarySerialization := d.Serialization == SerializationTypeBinary ||
 	// 	d.Serialization == SerializationTypeBinaryUTF8
+
+	if msg.IsString {
+		d.Emit(ConnectionEventTypeData, string(msg.Data))
+	} else {
+		d.Emit(ConnectionEventTypeData, string(msg.Data))
+	}
+
 	// if (isBinarySerialization) {
 	// 	if (datatype == Blob) {
 	//     // Datatype should never be blob
@@ -134,8 +142,8 @@ func (d *DataConnection) handleDataMessage(msg webrtc.DataChannelMessage) {
 	// } else if (d.serialization === SerializationType.JSON) {
 	//   deserializedData = d.parse(data as string);
 	// }
-	// Check if we've chunked--if so, piece things back together.
-	// We're guaranteed that this isn't 0.
+	// // Check if we've chunked--if so, piece things back together.
+	// // We're guaranteed that this isn't 0.
 	// if deserializedData.__peerData {
 	// 	d.handleChunk(deserializedData)
 	// 	return
@@ -195,7 +203,6 @@ func (d *DataConnection) Close() error {
 
 	if d.encodingQueue != nil {
 		d.encodingQueue.Destroy()
-		d.encodingQueue.RemoveAllListeners()
 		d.encodingQueue = nil
 	}
 
@@ -219,7 +226,8 @@ func (d *DataConnection) Send(data []byte, chunked bool) {
 		return
 	}
 
-	panic("TODO")
+	d.bufferedSend(data)
+	// panic("TODO")
 
 	//TODO
 	// if (d.serialization == SerializationTypeJSON) {
@@ -310,16 +318,21 @@ func (d *DataConnection) sendChunks(raw []byte) {
 	// }
 }
 
-func (d *DataConnection) handleMessage(message ExchangeMessage) {
+// HandleMessage handles incoming messages
+func (d *DataConnection) HandleMessage(message *Message) error {
 	payload := message.Payload
 
 	switch message.Type {
 	case ServerMessageTypeAnswer:
-		d.negotiator.handleSDP(message.Type, payload.SDP)
+		d.negotiator.handleSDP(message.Type, *payload.SDP)
 		break
 	case ServerMessageTypeCandidate:
-		panic("TODO")
-		// d.negotiator.handleCandidate(payload.Candidate)
+		err := d.negotiator.HandleCandidate(webrtc.ICECandidateInit{
+			Candidate: payload.Candidate,
+		})
+		if err != nil {
+			d.log.Errorf("Failed to handle candidate for peer=%s: %s", d.peerID, err)
+		}
 		break
 	default:
 		d.log.Warnf(
@@ -329,4 +342,6 @@ func (d *DataConnection) handleMessage(message ExchangeMessage) {
 		)
 		break
 	}
+
+	return nil
 }

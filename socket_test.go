@@ -10,11 +10,11 @@ import (
 func TestNewSocket(t *testing.T) {
 	s := NewSocket(getTestOpts())
 	done := false
-	go func() {
-		ev := <-s.Events
+	s.On(ConnectionEventTypeOpen, func(data interface{}) {
+		ev := data.(SocketEvent)
 		assert.Equal(t, ev.Type, ConnectionEventTypeOpen)
 		done = true
-	}()
+	})
 	err := s.Start("test", "test")
 	assert.NoError(t, err)
 	err = s.Close()

@@ -6,7 +6,7 @@ const (
 	ConnectionEventTypeOpen string = "open"
 	//ConnectionEventTypeStream enum for connection stream
 	ConnectionEventTypeStream = "stream"
-	//ConnectionEventTypeData enum for connection open data
+	//ConnectionEventTypeData enum for connection data
 	ConnectionEventTypeData = "data"
 	//ConnectionEventTypeClose enum for connection close
 	ConnectionEventTypeClose = "close"

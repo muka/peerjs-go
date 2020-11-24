@@ -55,9 +55,10 @@ type Options struct {
 }
 
 // NewConnectionOptions return a ConnectionOptions with defaults
-func NewConnectionOptions() ConnectionOptions {
-	return ConnectionOptions{
+func NewConnectionOptions() *ConnectionOptions {
+	return &ConnectionOptions{
 		Serialization: SerializationTypeBinary,
+		Debug:         -1,
 	}
 }
 
@@ -66,7 +67,7 @@ type ConnectionOptions struct {
 	//ConnectionID
 	ConnectionID string
 	//Payload
-	Payload MessagePayload
+	Payload Payload
 	//Label A unique label by which you want to identify this data connection. If left unspecified, a label will be generated at random.
 	Label string
 	// Metadata associated with the connection, passed in by whoever initiated the connection.
