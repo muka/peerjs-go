@@ -29,19 +29,17 @@ func main() {
 	fail(err)
 	defer peer1.Close()
 
-	peer2, err := peer.NewPeer("peer2", opts)
-	fail(err)
-	defer peer2.Close()
-
-	peer2.On("connection", func(data interface{}) {
-		conn2 := data.(*peer.DataConnection)
-		conn2.On("data", func(data interface{}) {
+	peer1.On("connection", func(data interface{}) {
+		conn1 := data.(*peer.DataConnection)
+		conn1.On("data", func(data interface{}) {
 			// Will print 'hi!'
 			log.Printf("Received: %v\n", data)
 		})
 	})
 
-	conn1, err := peer1.Connect("peer2", nil)
+	connOpts := peer.NewConnectionOptions()
+	connOpts.Serialization = peer.SerializationTypeNone
+	conn1, err := peer1.Connect("peerjs", connOpts)
 	fail(err)
 	conn1.On("open", func(data interface{}) {
 		for {

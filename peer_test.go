@@ -1,6 +1,7 @@
 package peer
 
 import (
+	"bytes"
 	"log"
 	"testing"
 	"time"
@@ -50,13 +51,13 @@ func TestHelloWorld(t *testing.T) {
 	defer peer2.Close()
 
 	// done := false
-	done := make(chan bool)
+	done := false
 	peer2.On("connection", func(data interface{}) {
 		conn2 := data.(*DataConnection)
 		conn2.On("data", func(data interface{}) {
 			// Will print 'hi!'
 			log.Printf("Received: %v\n", data)
-			done <- true
+			done = true
 		})
 	})
 
@@ -69,9 +70,45 @@ func TestHelloWorld(t *testing.T) {
 		}
 	})
 
-	// // <-time.After(time.Millisecond * 100)
-	// // assert.True(t, done)
-	log.Print("Waiting for event")
-	<-done
-	log.Print("Exiting..")
+	<-time.After(time.Second * 1)
+	assert.True(t, done)
+}
+
+func TestLongPayload(t *testing.T) {
+
+	peer1, err := NewPeer("peer1", getTestOpts())
+	assert.NoError(t, err)
+	defer peer1.Close()
+
+	peer2, err := NewPeer("peer2", getTestOpts())
+	assert.NoError(t, err)
+	defer peer2.Close()
+
+	// done := false
+	done := false
+	peer2.On("connection", func(data interface{}) {
+		conn2 := data.(*DataConnection)
+		conn2.On("data", func(data interface{}) {
+			log.Printf("Received: %v\n", data)
+			done = true
+		})
+	})
+
+	conn1, err := peer1.Connect("peer2", nil)
+	assert.NoError(t, err)
+	conn1.On("open", func(data interface{}) {
+		raw := bytes.NewBuffer([]byte{})
+		for {
+			raw.Write([]byte("test"))
+			if raw.Len() > 99999 {
+				break
+			}
+		}
+		conn1.Send(raw.Bytes(), false)
+	})
+
+	// <-time.After(time.Second * 10000)
+	// assert.True(t, done)
+	log.Printf("Received: %v\n", done)
+	select {}
 }

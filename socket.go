@@ -19,8 +19,8 @@ type SocketEvent struct {
 }
 
 //NewSocket create a socket instance
-func NewSocket(opts Options) Socket {
-	s := Socket{
+func NewSocket(opts Options) *Socket {
+	s := &Socket{
 		Emitter: NewEmitter(),
 		log:     createLogger("socket", opts.Debug),
 	}

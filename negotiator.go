@@ -120,7 +120,7 @@ func (n *Negotiator) setupListeners(peerConnection *webrtc.PeerConnection) {
 		msg := Message{
 			Type: ServerMessageTypeCandidate,
 			Payload: Payload{
-				Candidate:    candidate.Candidate,
+				Candidate:    &candidate,
 				Type:         connectionType,
 				ConnectionID: connectionID,
 			},
@@ -401,7 +401,7 @@ func (n *Negotiator) handleSDP(sdpType string, sdp webrtc.SessionDescription) er
 }
 
 // HandleCandidate handles a candidate
-func (n *Negotiator) HandleCandidate(iceInit webrtc.ICECandidateInit) error {
+func (n *Negotiator) HandleCandidate(iceInit *webrtc.ICECandidateInit) error {
 
 	n.log.Debugf(`HandleCandidate: %v`, iceInit)
 
@@ -412,7 +412,7 @@ func (n *Negotiator) HandleCandidate(iceInit webrtc.ICECandidateInit) error {
 	peerConnection := n.connection.GetPeerConnection()
 	provider := n.connection.GetProvider()
 
-	err := peerConnection.AddICECandidate(iceInit)
+	err := peerConnection.AddICECandidate(*iceInit)
 	if err != nil {
 		provider.EmitError(PeerErrorTypeWebRTC, err)
 		n.log.Errorf("handleCandidate: %s", err)

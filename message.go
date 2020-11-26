@@ -10,7 +10,7 @@ type Payload struct {
 	Label         string                     `json:"label,omitempty"`
 	Serialization string                     `json:"serialization,omitempty"`
 	Reliable      bool                       `json:"reliable,omitempty"`
-	Candidate     string                     `json:"candidate,omitempty"`
+	Candidate     *webrtc.ICECandidateInit   `json:"candidate,omitempty"`
 	SDP           *webrtc.SessionDescription `json:"sdp,omitempty"`
 	Browser       string                     `json:"browser,omitempty"`
 }

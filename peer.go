@@ -24,8 +24,8 @@ type socketEventWrapper struct {
 }
 
 //NewPeer initializes a new Peer object
-func NewPeer(id string, opts Options) (Peer, error) {
-	p := Peer{
+func NewPeer(id string, opts Options) (*Peer, error) {
+	p := &Peer{
 		Emitter:      NewEmitter(),
 		opts:         opts,
 		api:          NewAPI(opts),
@@ -62,7 +62,7 @@ type Peer struct {
 	opts         Options
 	connections  map[string]map[string]Connection
 	api          API
-	socket       Socket
+	socket       *Socket
 	log          *logrus.Entry
 	open         bool
 	destroyed    bool
@@ -73,7 +73,7 @@ type Peer struct {
 
 //GetSocket return a socket connection
 func (p *Peer) GetSocket() *Socket {
-	return &p.socket
+	return p.socket
 }
 
 //GetOptions return options
@@ -403,6 +403,7 @@ func (p *Peer) cleanup() {
 	}
 
 	err := p.socket.Close()
+	p.socket = nil
 	if err != nil {
 		p.log.Warnf("Failed to close socket: %s", err)
 	}

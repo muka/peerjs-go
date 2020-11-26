@@ -3,10 +3,12 @@ package peer
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/pion/webrtc/v3"
 	"github.com/rs/xid"
+	"github.com/vmihailenco/msgpack/v5"
 )
 
 const (
@@ -14,6 +16,8 @@ const (
 	IDPrefix = "dc_"
 	//MaxBufferedAmount max amount to buffer
 	MaxBufferedAmount = 8 * 1024 * 1024
+	// ChunkedMTU payload size for a single message
+	ChunkedMTU = 16300
 )
 
 // NewDataConnection create new DataConnection
@@ -217,42 +221,48 @@ func (d *DataConnection) Close() error {
 }
 
 // Send allows user to send data
-func (d *DataConnection) Send(data []byte, chunked bool) {
+func (d *DataConnection) Send(data interface{}, chunked bool) error {
 	if !d.Open {
+		err := errors.New("Connection is not open. You should listen for the `open` event before sending messages")
 		d.Emit(
 			ConnectionEventTypeError,
-			errors.New("Connection is not open. You should listen for the `open` event before sending messages"),
+			err,
 		)
-		return
+		return err
 	}
 
-	d.bufferedSend(data)
-	// panic("TODO")
+	raw, isByteArray := data.([]byte)
 
-	//TODO
-	// if (d.serialization == SerializationTypeJSON) {
-	//   d.bufferedSend(b.toJSON(data));
-	// } else if (
-	//   d.Serialization == SerializationTypeBinary ||
-	//   d.Serialization == SerializationTypeBinaryUTF8
-	// ) {
-	//   const blob = util.pack(data);
+	if d.Serialization == SerializationTypeJSON {
+		if !isByteArray {
+			panic("JSON data must be converted to bytes before send, please use json.Marshal()")
+		}
+		// JSON data must be marshalled before send!
+		d.log.Debug("Send JSON")
+		d.bufferedSend(raw)
+	} else if d.Serialization == SerializationTypeBinary || d.Serialization == SerializationTypeBinaryUTF8 {
 
-	//   if (!chunked && blob.size > util.chunkedMTU) {
-	//     d._sendChunks(blob);
-	//     return;
-	//   }
+		// NOTE we pack with MessagePack not with binarypack. Understant if this is good enough
+		blob, err := msgpack.Marshal(data)
+		if err != nil {
+			return fmt.Errorf("Failed to pack message: %s", err)
+		}
 
-	//   if (!util.supports.binaryBlob) {
-	//     // We only do this if we really need to (e.g. blobs are not supported),
-	//     // because this conversion is costly.
-	//     d._encodingQueue.enque(blob);
-	//   } else {
-	//     d._bufferedSend(blob);
-	//   }
-	// } else {
-	//   d._bufferedSend(data);
-	// }
+		if !chunked && len(blob) > ChunkedMTU {
+			d.log.Debug("Chunk payload")
+			d.sendChunks(blob)
+			return nil
+		}
+
+		d.log.Debugf("Send encoded payload %v", raw)
+		d.bufferedSend(blob)
+
+	} else {
+		d.log.Debug("Send raw payload")
+		d.bufferedSend(raw)
+	}
+
+	return nil
 }
 
 func (d *DataConnection) bufferedSend(msg []byte) {
@@ -280,7 +290,7 @@ func (d *DataConnection) trySend(msg []byte) bool {
 	if err != nil {
 		d.log.Errorf(`DC#%s Error sending %s`, d.GetID(), err)
 		d.buffering = true
-		d.Close()
+		// d.Close()
 		return false
 	}
 
@@ -308,14 +318,11 @@ func (d *DataConnection) tryBuffer() {
 }
 
 func (d *DataConnection) sendChunks(raw []byte) {
-	// TODO
-	panic("TODO")
-	// blobs := util.chunk(raw)
-	// d.log.Debugf(`DC#%s Try to send %d chunks...`, d.GetID(), len(blobs))
-
-	// for blob := range blobs {
-	// 	d.Send(blob, true)
-	// }
+	chunks := Chunk(raw)
+	d.log.Debugf(`DC#%s Try to send %d chunks...`, d.GetID(), len(chunks))
+	for _, chunk := range chunks {
+		d.Send(chunk, true)
+	}
 }
 
 // HandleMessage handles incoming messages
@@ -327,9 +334,7 @@ func (d *DataConnection) HandleMessage(message *Message) error {
 		d.negotiator.handleSDP(message.Type, *payload.SDP)
 		break
 	case ServerMessageTypeCandidate:
-		err := d.negotiator.HandleCandidate(webrtc.ICECandidateInit{
-			Candidate: payload.Candidate,
-		})
+		err := d.negotiator.HandleCandidate(payload.Candidate)
 		if err != nil {
 			d.log.Errorf("Failed to handle candidate for peer=%s: %s", d.peerID, err)
 		}

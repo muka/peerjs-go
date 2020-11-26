@@ -1,26 +1,27 @@
 # Golang PeerJS 
 
-A golang implementation of [PeerJS](https://github.com/peers/peerjs)
+A Golang implementation of [PeerJS](https://github.com/peers/peerjs)
 
 This project is in __early stage development__!
 
 ## Implementation status
 
+- [X] Message chunking
+- [ ] Create a [js-binarypack](https://github.com/peers/js-binarypack) port
 - [X] Datachannel
 - [ ] Mediachannel
 - [ ] Test coverage > 80%
 
 ## Usage example
 
+See [_examples folder](./_examples)
+
 ```golang
 
-
-	peer1, err := NewPeer("peer1", getTestOpts())
-	assert.NoError(t, err)
+	peer1, _ := NewPeer("peer1", getTestOpts())
 	defer peer1.Close()
 
-	peer2, err := NewPeer("peer2", getTestOpts())
-	assert.NoError(t, err)
+	peer2, _ := NewPeer("peer2", getTestOpts())
 	defer peer2.Close()
 
 	peer2.On("connection", func(data interface{}) {
@@ -31,8 +32,7 @@ This project is in __early stage development__!
 		})
 	})
 
-	conn1, err := peer1.Connect("peer2", nil)
-	assert.NoError(t, err)
+	conn1, _ := peer1.Connect("peer2", nil)
 	conn1.On("open", func(data interface{}) {
 		for {
 			conn1.Send([]byte("hi!"), false)

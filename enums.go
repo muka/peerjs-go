@@ -57,12 +57,14 @@ const (
 	//PeerErrorTypeWebRTC enum for  peer error webrtc
 	PeerErrorTypeWebRTC = "webrtc"
 
-	//SerializationTypeBinary enum for
+	//SerializationTypeBinary enum for binary serialization
 	SerializationTypeBinary = "binary"
-	//SerializationTypeBinaryUTF8 enum for
+	//SerializationTypeBinaryUTF8 enum for UTF8 binary serialization
 	SerializationTypeBinaryUTF8 = "binary-utf8"
-	//SerializationTypeJSON enum for
+	//SerializationTypeJSON enum for JSON serialization
 	SerializationTypeJSON = "json"
+	//SerializationTypeNone No serialization, just pipe bytes
+	SerializationTypeNone = "none"
 
 	//SocketEventTypeMessage enum for socket message
 	SocketEventTypeMessage = "message"
