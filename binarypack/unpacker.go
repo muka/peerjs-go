@@ -196,19 +196,19 @@ func (u *unpacker) unpack_int16() int16 {
 }
 
 func (u *unpacker) unpack_int32() int32 {
-	uint32val := u.unpack_uint32()
-	if uint32val < math.Pow(2, 31) {
-		return uint32val
+	val := float64(u.unpack_uint32())
+	if val < math.Pow(2, 31) {
+		return int32(val)
 	}
-	return uint32val - math.Pow(2, 32)
+	return int32(val - math.Pow(2, 32))
 }
 
 func (u *unpacker) unpack_int64() int64 {
-	uint64val := u.unpack_uint64()
-	if uint64 < Math.pow(2, 63) {
-		return uint64val
+	val := float64(u.unpack_uint64())
+	if val < math.Pow(2, 63) {
+		return int64(val)
 	}
-	return uint64val - math.Pow(2, 64)
+	return int64(val - math.Pow(2, 64))
 }
 
 func (u *unpacker) unpack_raw(size int) []byte {
@@ -228,23 +228,19 @@ func (u *unpacker) unpack_string(size int) string {
 	bytes := u.read(int(size))
 	i := 0
 	str := ""
-	var c byte
-	var code rune
-
 	for i < size {
-		c = bytes[i]
+		c := bytes[i]
 		if c < 128 {
 			//   str += String.fromCharCode(c);
 			str += string(c)
 			i++
 		} else if (c ^ 0xc0) < 32 {
-			code = rune((c^0xc0)<<6) | (bytes[i+1] & 63)
+			code := ((c ^ 0xc0) << 6) | (bytes[i+1] & 63)
 			//   str += String.fromCharCode(code);
 			str += string(code)
 			i += 2
 		} else {
-			code = ((c & 15) << 12) | ((bytes[i+1] & 63) << 6) |
-				(bytes[i+2] & 63)
+			code := ((c & 15) << 12) | ((bytes[i+1] & 63) << 6) | (bytes[i+2] & 63)
 			str += string(code)
 			i += 3
 		}
