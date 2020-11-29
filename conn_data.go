@@ -3,12 +3,10 @@ package peer
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/pion/webrtc/v3"
 	"github.com/rs/xid"
-	"github.com/vmihailenco/msgpack/v5"
 )
 
 const (
@@ -43,7 +41,7 @@ func NewDataConnection(peerID string, peer *Peer, opts ConnectionOptions) (*Data
 
 	d.Serialization = opts.Serialization
 	if d.Serialization == "" {
-		d.Serialization = SerializationTypeBinary
+		d.Serialization = SerializationTypeRaw
 	}
 
 	d.Reliable = opts.Reliable
@@ -125,7 +123,7 @@ func (d *DataConnection) handleDataMessage(msg webrtc.DataChannelMessage) {
 	if msg.IsString {
 		d.Emit(ConnectionEventTypeData, string(msg.Data))
 	} else {
-		d.Emit(ConnectionEventTypeData, string(msg.Data))
+		d.Emit(ConnectionEventTypeData, msg.Data)
 	}
 
 	// if (isBinarySerialization) {
@@ -220,8 +218,8 @@ func (d *DataConnection) Close() error {
 	return nil
 }
 
-// Send allows user to send data
-func (d *DataConnection) Send(data interface{}, chunked bool) error {
+// Send allows user to send data.
+func (d *DataConnection) Send(data []byte, chunked bool) error {
 	if !d.Open {
 		err := errors.New("Connection is not open. You should listen for the `open` event before sending messages")
 		d.Emit(
@@ -231,38 +229,42 @@ func (d *DataConnection) Send(data interface{}, chunked bool) error {
 		return err
 	}
 
-	raw, isByteArray := data.([]byte)
-
-	if d.Serialization == SerializationTypeJSON {
-		if !isByteArray {
-			panic("JSON data must be converted to bytes before send, please use json.Marshal()")
-		}
-		// JSON data must be marshalled before send!
-		d.log.Debug("Send JSON")
-		d.bufferedSend(raw)
-	} else if d.Serialization == SerializationTypeBinary || d.Serialization == SerializationTypeBinaryUTF8 {
-
-		// NOTE we pack with MessagePack not with binarypack. Understant if this is good enough
-		blob, err := msgpack.Marshal(data)
-		if err != nil {
-			return fmt.Errorf("Failed to pack message: %s", err)
-		}
-
-		if !chunked && len(blob) > ChunkedMTU {
-			d.log.Debug("Chunk payload")
-			d.sendChunks(blob)
-			return nil
-		}
-
-		d.log.Debugf("Send encoded payload %v", raw)
-		d.bufferedSend(blob)
-
-	} else {
-		d.log.Debug("Send raw payload")
-		d.bufferedSend(raw)
+	err := d.DataChannel.Send(data)
+	if err != nil {
+		d.log.Warnf("Send failed: %s", err)
+		return err
 	}
 
 	return nil
+
+	// if d.Serialization == SerializationTypeJSON {
+	// 	// JSON data must be marshalled before send!
+	// 	d.log.Debug("Send JSON")
+	// 	d.bufferedSend(raw)
+	// } else if d.Serialization == SerializationTypeBinary || d.Serialization == SerializationTypeBinaryUTF8 {
+
+	// 	panic(errors.New("binarypack encoding is not supported"))
+
+	// 	// NOTE we pack with MessagePack not with binarypack. Understant if this is good enough
+	// 	// blob, err := msgpack.Marshal(data)
+	// 	// if err != nil {
+	// 	// 	return fmt.Errorf("Failed to pack message: %s", err)
+	// 	// }
+
+	// 	// if !chunked && len(blob) > ChunkedMTU {
+	// 	// 	d.log.Debug("Chunk payload")
+	// 	// 	d.sendChunks(blob)
+	// 	// 	return nil
+	// 	// }
+
+	// 	// d.log.Debugf("Send encoded payload %v", raw)
+	// 	// d.bufferedSend(blob)
+
+	// } else {
+	// 	d.log.Debug("Send raw payload")
+	// 	d.bufferedSend(raw)
+	// }
+
 }
 
 func (d *DataConnection) bufferedSend(msg []byte) {
@@ -318,11 +320,13 @@ func (d *DataConnection) tryBuffer() {
 }
 
 func (d *DataConnection) sendChunks(raw []byte) {
-	chunks := Chunk(raw)
-	d.log.Debugf(`DC#%s Try to send %d chunks...`, d.GetID(), len(chunks))
-	for _, chunk := range chunks {
-		d.Send(chunk, true)
-	}
+	panic("sendChunks: binarypack not implemented, please use SerializationTypeRaw")
+	// // this method requires a [binarypack] encoding to work
+	// chunks := Chunk(raw)
+	// d.log.Debugf(`DC#%s Try to send %d chunks...`, d.GetID(), len(chunks))
+	// for _, chunk := range chunks {
+	// 	d.Send(chunk, true)
+	// }
 }
 
 // HandleMessage handles incoming messages

@@ -84,13 +84,12 @@ func TestLongPayload(t *testing.T) {
 	assert.NoError(t, err)
 	defer peer2.Close()
 
-	// done := false
-	done := false
+	done := make(chan bool)
 	peer2.On("connection", func(data interface{}) {
 		conn2 := data.(*DataConnection)
 		conn2.On("data", func(data interface{}) {
-			log.Printf("Received: %v\n", data)
-			done = true
+			log.Printf("Received\n")
+			done <- true
 		})
 	})
 
@@ -100,15 +99,13 @@ func TestLongPayload(t *testing.T) {
 		raw := bytes.NewBuffer([]byte{})
 		for {
 			raw.Write([]byte("test"))
-			if raw.Len() > 99999 {
+			if raw.Len() > 60000 {
+				log.Printf("Msg size %d\n", raw.Len())
 				break
 			}
 		}
 		conn1.Send(raw.Bytes(), false)
 	})
 
-	// <-time.After(time.Second * 10000)
-	// assert.True(t, done)
-	log.Printf("Received: %v\n", done)
-	select {}
+	<-done
 }

@@ -63,8 +63,8 @@ const (
 	SerializationTypeBinaryUTF8 = "binary-utf8"
 	//SerializationTypeJSON enum for JSON serialization
 	SerializationTypeJSON = "json"
-	//SerializationTypeNone No serialization, just pipe bytes
-	SerializationTypeNone = "none"
+	//SerializationTypeRaw Payload is sent as-is
+	SerializationTypeRaw = "raw"
 
 	//SocketEventTypeMessage enum for socket message
 	SocketEventTypeMessage = "message"

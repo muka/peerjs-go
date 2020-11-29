@@ -11,7 +11,6 @@ require (
 	github.com/rs/xid v1.2.1
 	github.com/sirupsen/logrus v1.7.0
 	github.com/stretchr/testify v1.6.1
-	github.com/vmihailenco/msgpack/v5 v5.0.0 
 	golang.org/x/crypto v0.0.0-20201124201722-c8d3bf9c5392 // indirect
 	golang.org/x/sys v0.0.0-20201119102817-f84b799fce68 // indirect
 	google.golang.org/protobuf v1.25.0 // indirect

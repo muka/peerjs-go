@@ -57,7 +57,7 @@ type Options struct {
 // NewConnectionOptions return a ConnectionOptions with defaults
 func NewConnectionOptions() *ConnectionOptions {
 	return &ConnectionOptions{
-		Serialization: SerializationTypeBinary,
+		Serialization: SerializationTypeRaw,
 		Debug:         -1,
 	}
 }
