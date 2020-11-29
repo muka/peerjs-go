@@ -3,17 +3,23 @@ package binarypack
 import (
 	"errors"
 	"fmt"
+	"log"
 	"math"
 )
 
 // var BufferBuilder = require('./bufferbuilder').BufferBuilder;
 // var binaryFeatures = require('./bufferbuilder').binaryFeatures;
 
-const undefined = false
+type _undefined struct{}
 
-func Unpack(data []byte) interface{} {
+var undefined _undefined
+
+//Unpack unmarshal data to struct
+func Unpack(data []byte, dst interface{}) error {
 	unpacker := newUnpacker(data)
-	return unpacker.unpack()
+	res := unpacker.unpack()
+	log.Printf("result %v", res)
+	return nil
 }
 
 func newUnpacker(data []byte) unpacker {
