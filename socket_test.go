@@ -1,6 +1,7 @@
 package peer
 
 import (
+	"log"
 	"testing"
 	"time"
 
@@ -10,15 +11,16 @@ import (
 func TestNewSocket(t *testing.T) {
 	s := NewSocket(getTestOpts())
 	done := false
-	s.On(ConnectionEventTypeOpen, func(data interface{}) {
+	s.On(SocketEventTypeMessage, func(data interface{}) {
 		ev := data.(SocketEvent)
-		assert.Equal(t, ev.Type, ConnectionEventTypeOpen)
+		assert.Equal(t, ev.Type, SocketEventTypeMessage)
+		log.Println("socket received")
 		done = true
 	})
 	err := s.Start("test", "test")
 	assert.NoError(t, err)
 	err = s.Close()
 	assert.NoError(t, err)
-	<-time.After(time.Millisecond * 100)
+	<-time.After(time.Millisecond * 500)
 	assert.True(t, done)
 }

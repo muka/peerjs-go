@@ -56,7 +56,7 @@ func TestHelloWorld(t *testing.T) {
 		conn2 := data.(*DataConnection)
 		conn2.On("data", func(data interface{}) {
 			// Will print 'hi!'
-			log.Printf("Received: %v\n", data)
+			log.Println("Received")
 			done = true
 		})
 	})
@@ -95,6 +95,9 @@ func TestLongPayload(t *testing.T) {
 
 	conn1, err := peer1.Connect("peer2", nil)
 	assert.NoError(t, err)
+	if err != nil {
+		t.Fatal(err)
+	}
 	conn1.On("open", func(data interface{}) {
 		raw := bytes.NewBuffer([]byte{})
 		for {

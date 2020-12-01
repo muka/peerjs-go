@@ -3,7 +3,6 @@ package peer
 import (
 	"bytes"
 	"errors"
-	"time"
 
 	"github.com/pion/webrtc/v3"
 	"github.com/rs/xid"
@@ -24,7 +23,7 @@ func NewDataConnection(peerID string, peer *Peer, opts ConnectionOptions) (*Data
 	d := &DataConnection{
 		BaseConnection: newBaseConnection(ConnectionTypeData, peer, opts),
 		buffer:         bytes.NewBuffer([]byte{}),
-		encodingQueue:  NewEncodingQueue(),
+		// encodingQueue:  NewEncodingQueue(),
 	}
 
 	d.peerID = peerID
@@ -46,8 +45,8 @@ func NewDataConnection(peerID string, peer *Peer, opts ConnectionOptions) (*Data
 
 	d.Reliable = opts.Reliable
 
-	d.encodingQueue.On("done", d.onQueueDone)
-	d.encodingQueue.On("error", d.onQueueErr)
+	// d.encodingQueue.On("done", d.onQueueDone)
+	// d.encodingQueue.On("error", d.onQueueErr)
 
 	d.negotiator = NewNegotiator(d, opts)
 	err := d.negotiator.StartConnection(opts)
@@ -64,26 +63,26 @@ type chunkedData struct {
 // DataConnection track a connection with a remote Peer
 type DataConnection struct {
 	BaseConnection
-	negotiator    *Negotiator
-	buffer        *bytes.Buffer
-	bufferSize    int
-	buffering     bool
-	chunkedData   map[int]chunkedData
-	encodingQueue *EncodingQueue
+	negotiator  *Negotiator
+	buffer      *bytes.Buffer
+	bufferSize  int
+	buffering   bool
+	chunkedData map[int]chunkedData
+	// encodingQueue *EncodingQueue
 }
 
 //   parse: (data: string) => any = JSON.parse;
 
-func (d *DataConnection) onQueueDone(data interface{}) {
-	buf := data.([]byte)
-	d.bufferedSend(buf)
-}
+// func (d *DataConnection) onQueueDone(data interface{}) {
+// 	buf := data.([]byte)
+// 	d.bufferedSend(buf)
+// }
 
-func (d *DataConnection) onQueueErr(data interface{}) {
-	err := data.(error)
-	d.log.Errorf(`DC#%s: Error occured in encoding from blob to arraybuffer, close DC: %s`, d.GetID(), err)
-	d.Close()
-}
+// func (d *DataConnection) onQueueErr(data interface{}) {
+// 	err := data.(error)
+// 	d.log.Errorf(`DC#%s: Error occured in encoding from blob to arraybuffer, close DC: %s`, d.GetID(), err)
+// 	d.Close()
+// }
 
 //Initialize called by the Negotiator when the DataChannel is ready
 func (d *DataConnection) Initialize(dc *webrtc.DataChannel) {
@@ -203,10 +202,10 @@ func (d *DataConnection) Close() error {
 		d.DataChannel = nil
 	}
 
-	if d.encodingQueue != nil {
-		d.encodingQueue.Destroy()
-		d.encodingQueue = nil
-	}
+	// if d.encodingQueue != nil {
+	// 	d.encodingQueue.Destroy()
+	// 	d.encodingQueue = nil
+	// }
 
 	if !d.Open {
 		return nil
@@ -267,57 +266,57 @@ func (d *DataConnection) Send(data []byte, chunked bool) error {
 
 }
 
-func (d *DataConnection) bufferedSend(msg []byte) {
-	if d.buffering || !d.trySend(msg) {
-		d.buffer.Write(msg)
-		d.bufferSize = d.buffer.Len()
-	}
-}
+// func (d *DataConnection) bufferedSend(msg []byte) {
+// 	if d.buffering || !d.trySend(msg) {
+// 		d.buffer.Write(msg)
+// 		d.bufferSize = d.buffer.Len()
+// 	}
+// }
 
-// Returns true if the send succeeds.
-func (d *DataConnection) trySend(msg []byte) bool {
-	if !d.Open {
-		return false
-	}
+// // Returns true if the send succeeds.
+// func (d *DataConnection) trySend(msg []byte) bool {
+// 	if !d.Open {
+// 		return false
+// 	}
 
-	if d.DataChannel.BufferedAmount() > MaxBufferedAmount {
-		d.buffering = true
-		<-time.After(time.Millisecond * 50)
-		d.buffering = false
-		d.tryBuffer()
-		return false
-	}
+// 	if d.DataChannel.BufferedAmount() > MaxBufferedAmount {
+// 		d.buffering = true
+// 		<-time.After(time.Millisecond * 50)
+// 		d.buffering = false
+// 		d.tryBuffer()
+// 		return false
+// 	}
 
-	err := d.DataChannel.Send(msg)
-	if err != nil {
-		d.log.Errorf(`DC#%s Error sending %s`, d.GetID(), err)
-		d.buffering = true
-		// d.Close()
-		return false
-	}
+// 	err := d.DataChannel.Send(msg)
+// 	if err != nil {
+// 		d.log.Errorf(`DC#%s Error sending %s`, d.GetID(), err)
+// 		d.buffering = true
+// 		// d.Close()
+// 		return false
+// 	}
 
-	return true
-}
+// 	return true
+// }
 
 // Try to send the first message in the buffer.
-func (d *DataConnection) tryBuffer() {
-	if !d.Open {
-		return
-	}
+// func (d *DataConnection) tryBuffer() {
+// 	if !d.Open {
+// 		return
+// 	}
 
-	if d.buffer.Len() == 0 {
-		return
-	}
+// 	if d.buffer.Len() == 0 {
+// 		return
+// 	}
 
-	// TODO here buffer is a slice not a continuous array
-	// check or reimplement this part!
-	msg := d.buffer.Bytes()
-	if d.trySend(msg) {
-		d.buffer.Reset()
-		d.bufferSize = d.buffer.Len()
-		d.tryBuffer()
-	}
-}
+// 	// TODO here buffer is a slice not a continuous array
+// 	// check or reimplement this part!
+// 	msg := d.buffer.Bytes()
+// 	if d.trySend(msg) {
+// 		d.buffer.Reset()
+// 		d.bufferSize = d.buffer.Len()
+// 		d.tryBuffer()
+// 	}
+// }
 
 func (d *DataConnection) sendChunks(raw []byte) {
 	panic("sendChunks: binarypack not implemented, please use SerializationTypeRaw")

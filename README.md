@@ -6,15 +6,14 @@ This project is in __early stage development__!
 
 ## Implementation notes
 
-- [X] 
 - [X] Datachannel
 - [ ] Mediachannel
 - [ ] Test coverage > 80%
 
-### Unsupported features:
+### Unsupported features
 
-- Message chunking (implemented but untested)
 - Payload de/encoding based on [js-binarypack](https://github.com/peers/js-binarypack) is not supported. An incomplete attempt in branch `binarypack`
+- Message chunking (incompletely implemented)
 
 ## Usage example
 
