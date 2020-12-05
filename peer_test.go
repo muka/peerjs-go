@@ -2,12 +2,19 @@ package peer
 
 import (
 	"bytes"
+	"fmt"
 	"log"
 	"testing"
 	"time"
 
+	"github.com/pion/webrtc/v3"
+	"github.com/rs/xid"
 	"github.com/stretchr/testify/assert"
 )
+
+func rndName(name string) string {
+	return fmt.Sprintf("%s_%s", name, xid.New().String())
+}
 
 func getTestOpts() Options {
 	opts := NewOptions()
@@ -27,7 +34,7 @@ func TestNewPeer(t *testing.T) {
 }
 
 func TestNewPeerEvents(t *testing.T) {
-	p, err := NewPeer("test", getTestOpts())
+	p, err := NewPeer(rndName("test"), getTestOpts())
 	// done := false
 	// p.On(PeerEventTypeOpen, func(data interface{}) {
 	// 	done = true
@@ -42,11 +49,14 @@ func TestNewPeerEvents(t *testing.T) {
 
 func TestHelloWorld(t *testing.T) {
 
-	peer1, err := NewPeer("peer1", getTestOpts())
+	peer1Name := rndName("peer1")
+	peer2Name := rndName("peer2")
+
+	peer1, err := NewPeer(peer1Name, getTestOpts())
 	assert.NoError(t, err)
 	defer peer1.Close()
 
-	peer2, err := NewPeer("peer2", getTestOpts())
+	peer2, err := NewPeer(peer2Name, getTestOpts())
 	assert.NoError(t, err)
 	defer peer2.Close()
 
@@ -61,7 +71,7 @@ func TestHelloWorld(t *testing.T) {
 		})
 	})
 
-	conn1, err := peer1.Connect("peer2", nil)
+	conn1, err := peer1.Connect(peer2Name, nil)
 	assert.NoError(t, err)
 	conn1.On("open", func(data interface{}) {
 		for {
@@ -76,11 +86,14 @@ func TestHelloWorld(t *testing.T) {
 
 func TestLongPayload(t *testing.T) {
 
-	peer1, err := NewPeer("peer1", getTestOpts())
+	peer1Name := rndName("peer1")
+	peer2Name := rndName("peer2")
+
+	peer1, err := NewPeer(peer1Name, getTestOpts())
 	assert.NoError(t, err)
 	defer peer1.Close()
 
-	peer2, err := NewPeer("peer2", getTestOpts())
+	peer2, err := NewPeer(peer2Name, getTestOpts())
 	assert.NoError(t, err)
 	defer peer2.Close()
 
@@ -93,7 +106,7 @@ func TestLongPayload(t *testing.T) {
 		})
 	})
 
-	conn1, err := peer1.Connect("peer2", nil)
+	conn1, err := peer1.Connect(peer2Name, nil)
 	assert.NoError(t, err)
 	if err != nil {
 		t.Fatal(err)
@@ -111,4 +124,39 @@ func TestLongPayload(t *testing.T) {
 	})
 
 	<-done
+}
+
+func TestMediaCall(t *testing.T) {
+
+	peer1Name := rndName("peer1")
+	peer2Name := rndName("peer2")
+
+	peer1, err := NewPeer(peer1Name, getTestOpts())
+	assert.NoError(t, err)
+	defer peer1.Close()
+
+	peer2, err := NewPeer(peer2Name, getTestOpts())
+	assert.NoError(t, err)
+	defer peer2.Close()
+
+	var track webrtc.TrackLocal
+	call1, err := peer1.Call(peer2Name, track, nil)
+	assert.NoError(t, err)
+
+	peer2.On("call", func(raw interface{}) {
+		// Answer the call, providing our mediaStream
+		call := raw.(MediaConnection)
+		var mediaStream webrtc.TrackLocal
+		call.Answer(mediaStream, nil)
+		call.On("stream", func(raw interface{}) {
+			// stream := raw.(MediaStream)
+			t.Log("peer2: Received remote stream")
+		})
+	})
+
+	call1.On("stream", func(raw interface{}) {
+		// stream := raw.(MediaStream)
+		t.Log("peer1: Received remote stream")
+	})
+
 }

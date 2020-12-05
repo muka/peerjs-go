@@ -77,13 +77,19 @@ type ConnectionOptions struct {
 	// Reliable whether the underlying data channels should be reliable (e.g. for large file transfers) or not (e.g. for gaming or streaming). Defaults to false.
 	Reliable bool
 	// Stream contains the reference to a media stream
-	Stream MediaStream
+	Stream *MediaStream
 	// Originator indicate if the originator
 	Originator bool
 	// SDP contains SDP information
 	SDP webrtc.SessionDescription
 	// Debug level for debug taken. See Options
 	Debug int8
+	// SDPTransform transformation function for SDP message
+	SDPTransform func(string) string
+}
+
+//AnswerOption wraps answer options
+type AnswerOption struct {
 	// SDPTransform transformation function for SDP message
 	SDPTransform func(string) string
 }

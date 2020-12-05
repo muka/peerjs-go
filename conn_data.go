@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	//IDPrefix used as prefix for random ID
-	IDPrefix = "dc_"
+	//DataChannelIDPrefix used as prefix for random ID
+	DataChannelIDPrefix = "dc_"
 	//MaxBufferedAmount max amount to buffer
 	MaxBufferedAmount = 8 * 1024 * 1024
 	// ChunkedMTU payload size for a single message
@@ -30,7 +30,7 @@ func NewDataConnection(peerID string, peer *Peer, opts ConnectionOptions) (*Data
 
 	d.id = opts.ConnectionID
 	if d.id == "" {
-		d.id = IDPrefix + xid.New().String()
+		d.id = DataChannelIDPrefix + xid.New().String()
 	}
 
 	d.Label = opts.Label
@@ -63,11 +63,10 @@ type chunkedData struct {
 // DataConnection track a connection with a remote Peer
 type DataConnection struct {
 	BaseConnection
-	negotiator  *Negotiator
-	buffer      *bytes.Buffer
-	bufferSize  int
-	buffering   bool
-	chunkedData map[int]chunkedData
+	buffer     *bytes.Buffer
+	bufferSize int
+	buffering  bool
+	// chunkedData map[int]chunkedData
 	// encodingQueue *EncodingQueue
 }
 
@@ -152,27 +151,27 @@ func (d *DataConnection) handleDataMessage(msg webrtc.DataChannelMessage) {
 	// d.Emit(ConnectionEventTypeData, deserializedData)
 }
 
-func (d *DataConnection) handleChunk(raw []byte) {
-	// const id = data.__peerData;
-	// const chunkInfo = d._chunkedData[id] || {
-	//   data: [],
-	//   count: 0,
-	//   total: data.total
-	// };
+// func (d *DataConnection) handleChunk(raw []byte) {
+// 	// const id = data.__peerData;
+// 	// const chunkInfo = d._chunkedData[id] || {
+// 	//   data: [],
+// 	//   count: 0,
+// 	//   total: data.total
+// 	// };
 
-	// chunkInfo.data[data.n] = data.data;
-	// chunkInfo.count++;
-	// d._chunkedData[id] = chunkInfo;
+// 	// chunkInfo.data[data.n] = data.data;
+// 	// chunkInfo.count++;
+// 	// d._chunkedData[id] = chunkInfo;
 
-	// if (chunkInfo.total === chunkInfo.count) {
-	//   // Clean up before making the recursive call to `_handleDataMessage`.
-	//   delete d._chunkedData[id];
+// 	// if (chunkInfo.total === chunkInfo.count) {
+// 	//   // Clean up before making the recursive call to `_handleDataMessage`.
+// 	//   delete d._chunkedData[id];
 
-	//   // We've received all the chunks--time to construct the complete data.
-	//   const data = new Blob(chunkInfo.data);
-	//   d._handleDataMessage({ data });
-	// }
-}
+// 	//   // We've received all the chunks--time to construct the complete data.
+// 	//   const data = new Blob(chunkInfo.data);
+// 	//   d._handleDataMessage({ data });
+// 	// }
+// }
 
 /**
  * Exposed functionality for users.
@@ -183,7 +182,7 @@ func (d *DataConnection) Close() error {
 
 	d.buffer = nil
 	d.bufferSize = 0
-	d.chunkedData = map[int]chunkedData{}
+	// d.chunkedData = map[int]chunkedData{}
 
 	if d.negotiator != nil {
 		d.negotiator.Cleanup()
@@ -318,15 +317,15 @@ func (d *DataConnection) Send(data []byte, chunked bool) error {
 // 	}
 // }
 
-func (d *DataConnection) sendChunks(raw []byte) {
-	panic("sendChunks: binarypack not implemented, please use SerializationTypeRaw")
-	// // this method requires a [binarypack] encoding to work
-	// chunks := Chunk(raw)
-	// d.log.Debugf(`DC#%s Try to send %d chunks...`, d.GetID(), len(chunks))
-	// for _, chunk := range chunks {
-	// 	d.Send(chunk, true)
-	// }
-}
+// func (d *DataConnection) sendChunks(raw []byte) {
+// 	panic("sendChunks: binarypack not implemented, please use SerializationTypeRaw")
+// 	// // this method requires a [binarypack] encoding to work
+// 	// chunks := Chunk(raw)
+// 	// d.log.Debugf(`DC#%s Try to send %d chunks...`, d.GetID(), len(chunks))
+// 	// for _, chunk := range chunks {
+// 	// 	d.Send(chunk, true)
+// 	// }
+// }
 
 // HandleMessage handles incoming messages
 func (d *DataConnection) HandleMessage(message *Message) error {

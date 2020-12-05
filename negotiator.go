@@ -11,11 +11,18 @@ import (
 // DefaultBrowser is the browser name
 const DefaultBrowser = "peerjs-go"
 
+func newWebrtcAPI() *webrtc.API {
+	mediaEngine := new(webrtc.MediaEngine)
+	mediaEngine.RegisterDefaultCodecs()
+	return webrtc.NewAPI(webrtc.WithMediaEngine(mediaEngine))
+}
+
 //NewNegotiator initiate a new negotiator
 func NewNegotiator(conn Connection, opts ConnectionOptions) *Negotiator {
 	return &Negotiator{
 		connection: conn,
 		log:        createLogger("negotiator", opts.Debug),
+		webrtc:     newWebrtcAPI(),
 	}
 }
 
@@ -23,6 +30,7 @@ func NewNegotiator(conn Connection, opts ConnectionOptions) *Negotiator {
 type Negotiator struct {
 	connection Connection
 	log        *logrus.Entry
+	webrtc     *webrtc.API
 }
 
 //StartConnection Returns a PeerConnection object set up correctly (for data, media). */
@@ -37,8 +45,8 @@ func (n *Negotiator) StartConnection(opts ConnectionOptions) error {
 	n.connection.SetPeerConnection(peerConnection)
 
 	if n.connection.GetType() == ConnectionTypeMedia && opts.Stream != nil {
-		for _, track := range opts.Stream {
-			peerConnection.AddTrack(track)
+		for _, track := range opts.Stream.GetTracks() {
+			peerConnection.AddTrack(track.(webrtc.TrackLocal))
 		}
 	}
 
@@ -79,7 +87,7 @@ func (n *Negotiator) startPeerConnection() (*webrtc.PeerConnection, error) {
 
 	// peerConnection = webrtc.PeerConnection(this.connection.provider.options.config);
 	c := n.connection.GetProvider().GetOptions().Configuration
-	peerConnection, err := webrtc.NewPeerConnection(c)
+	peerConnection, err := n.webrtc.NewPeerConnection(c)
 	if err != nil {
 		return nil, err
 	}
@@ -423,11 +431,3 @@ func (n *Negotiator) HandleCandidate(iceInit *webrtc.ICECandidateInit) error {
 
 	return nil
 }
-
-// func (n *Negotiator) addTracksToConnection(stream mediadevices.MediaStream, peerConnection *webrtc.PeerConnection) {
-// 	n.log.Debugf(`add tracks from stream %s to peer connection`, stream.ID)
-// 	for _, track := range stream.GetTracks() {
-// 		peerConnection.AddTrack()
-// 	}
-
-// }

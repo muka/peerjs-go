@@ -22,16 +22,14 @@ type Connection interface {
 
 func newBaseConnection(connType string, peer *Peer, opts ConnectionOptions) BaseConnection {
 	return BaseConnection{
-		Emitter:  NewEmitter(),
-		Type:     connType,
-		Provider: peer,
-		log:      createLogger(connType, opts.Debug),
-		opts:     opts,
+		Emitter:    NewEmitter(),
+		Type:       connType,
+		Provider:   peer,
+		log:        createLogger(connType, opts.Debug),
+		opts:       opts,
+		negotiator: nil,
 	}
 }
-
-// MediaStream media stream interface
-type MediaStream []webrtc.TrackLocal
 
 // BaseConnection shared base connection
 type BaseConnection struct {
@@ -62,6 +60,7 @@ type BaseConnection struct {
 	BufferSize int
 	opts       ConnectionOptions
 	log        *logrus.Entry
+	negotiator *Negotiator
 }
 
 // GetOptions return the connection configuration

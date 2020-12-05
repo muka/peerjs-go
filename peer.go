@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/pion/webrtc/v3"
 	"github.com/sirupsen/logrus"
 )
 
@@ -193,7 +194,7 @@ func (p *Peer) messageHandler(msg SocketEvent) {
 		}
 
 		// Find messages.
-		messages := p.getMessages(connectionID)
+		messages := p.GetMessages(connectionID)
 		for _, message := range messages {
 			connection.HandleMessage(&message)
 		}
@@ -268,8 +269,8 @@ func (p *Peer) storeMessage(connectionID string, message Message) {
 	p.lostMessages[connectionID] = append(p.lostMessages[connectionID], message)
 }
 
-// Retrieve messages from lost message store
-func (p *Peer) getMessages(connectionID string) []Message {
+//GetMessages Retrieve messages from lost message store
+func (p *Peer) GetMessages(connectionID string) []Message {
 	if messages, ok := p.lostMessages[connectionID]; ok {
 		delete(p.lostMessages, connectionID)
 		return messages
@@ -325,7 +326,11 @@ func (p *Peer) Connect(peerID string, opts *ConnectionOptions) (*DataConnection,
 
 //Call returns a MediaConnection to the specified peer. See documentation for a
 //complete list of options.
-func (p *Peer) Call(peerID string, stream MediaStream, opts ConnectionOptions) (*MediaConnection, error) {
+func (p *Peer) Call(peerID string, track webrtc.TrackLocal, opts *ConnectionOptions) (*MediaConnection, error) {
+
+	if opts == nil {
+		opts = NewConnectionOptions()
+	}
 
 	if p.disconnected {
 		p.log.Warn("You cannot connect to a new Peer because you called .disconnect() on this Peer and ended your connection with the server. You can create a new Peer to reconnect")
@@ -337,15 +342,15 @@ func (p *Peer) Call(peerID string, stream MediaStream, opts ConnectionOptions) (
 		return nil, err
 	}
 
-	if stream == nil {
-		err := errors.New("To call a peer, you must provide a stream from your browser's `getUserMedia`")
+	if track == nil {
+		err := errors.New("To call a peer, you must provide a stream")
 		p.log.Error(err)
 		return nil, err
 	}
 
-	opts.Stream = stream
+	opts.Stream = NewMediaStreamWithTrack([]MediaStreamTrack{track})
 
-	mediaConnection, err := NewMediaConnection(peerID, p, opts)
+	mediaConnection, err := NewMediaConnection(peerID, p, *opts)
 	if err != nil {
 		p.log.Errorf("Failed to create a MediaConnection: %s", err)
 		return nil, err

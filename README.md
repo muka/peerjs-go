@@ -9,6 +9,7 @@ This project is in __early stage development__!
 - [X] Datachannel
 - [ ] Mediachannel
 - [ ] Test coverage > 80%
+- [ ] Port event emitter to typed callbacks
 
 ### Unsupported features
 
