@@ -81,6 +81,7 @@ func (m *MediaConnection) handleMessage(message Message) {
 
 //Answer open the media connection with the remote peer
 func (m *MediaConnection) Answer(tl webrtc.TrackLocal, options *AnswerOption) {
+
 	if m.localStream != nil {
 		m.log.Warn("Local stream already exists on this MediaConnection. Are you answering a call twice?")
 		return
@@ -106,12 +107,8 @@ func (m *MediaConnection) Answer(tl webrtc.TrackLocal, options *AnswerOption) {
 	m.open = true
 }
 
-/**
- * Exposed functionality for users.
- */
-
-/** Allows user to close connection. */
-func (m *MediaConnection) close() {
+//Close allows user to close connection
+func (m *MediaConnection) Close() error {
 	if m.negotiator != nil {
 		m.negotiator.Cleanup()
 		m.negotiator = nil
@@ -130,10 +127,11 @@ func (m *MediaConnection) close() {
 	}
 
 	if !m.open {
-		return
+		return nil
 	}
 
 	m.open = false
 
 	m.Emit(ConnectionEventTypeClose, nil)
+	return nil
 }

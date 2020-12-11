@@ -139,7 +139,11 @@ func TestMediaCall(t *testing.T) {
 	assert.NoError(t, err)
 	defer peer2.Close()
 
-	var track webrtc.TrackLocal
+	track, err := webrtc.NewTrackLocalStaticRTP(webrtc.RTPCodecCapability{MimeType: "video/vp8"}, "video", "pion")
+	if err != nil {
+		panic(err)
+	}
+
 	call1, err := peer1.Call(peer2Name, track, nil)
 	assert.NoError(t, err)
 
