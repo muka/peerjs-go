@@ -10,7 +10,7 @@ func NewOptions() Options {
 	return Options{
 		Host:         "0.peerjs.com",
 		Port:         443,
-		PingInterval: 5000,
+		PingInterval: 1000,
 		Path:         "/",
 		Secure:       true,
 		Token:        xid.New().String(),

@@ -77,7 +77,7 @@ func (s *Socket) Start(id string, token string) error {
 	s.conn = c
 
 	// s.conn.SetCloseHandler(func(code int, text string) error {
-	// 	s.log.Debug("Called close handler")
+	// 	s.log.Debug("Called socket WS close handler")
 	// 	s.disconnected = true
 	// 	s.Emit(SocketEventTypeDisconnected, SocketEvent{SocketEventTypeDisconnected, nil, nil})
 	// 	return nil
@@ -139,6 +139,8 @@ func (s *Socket) Start(id string, token string) error {
 				}
 
 				s.Emit(SocketEventTypeMessage, SocketEvent{SocketEventTypeMessage, &msg, err})
+			} else {
+				s.log.Warnf("Unmanaged socket WS message type %d", msgType)
 			}
 
 		}

@@ -18,6 +18,7 @@ type Emitter struct {
 
 //Emit emits an event with contextual data
 func (p *Emitter) Emit(event string, data interface{}) {
+	// log.Printf("EMIT %s %++v", event, data)
 	p.emitter.Emit(event, data)
 }
 

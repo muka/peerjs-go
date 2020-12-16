@@ -30,7 +30,7 @@ func (a *API) buildURL(method string) string {
 		proto = "https"
 	}
 	return fmt.Sprintf(
-		"%s://%s:%d%s%s/%s?ts=%d%d",
+		"%s://%s:%d%s/%s/%s?ts=%d%d",
 		proto,
 		a.opts.Host,
 		a.opts.Port,
@@ -47,6 +47,9 @@ func (a *API) req(method string) ([]byte, error) {
 	resp, err := http.Get(uri)
 	if err != nil {
 		return []byte{}, err
+	}
+	if resp.StatusCode >= 400 {
+		return []byte{}, fmt.Errorf("Request %s failed: %s", uri, resp.Status)
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)

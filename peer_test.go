@@ -33,6 +33,13 @@ func TestNewPeer(t *testing.T) {
 	p.Close()
 }
 
+func TestNewPeerRandomID(t *testing.T) {
+	p, err := NewPeer("", getTestOpts())
+	assert.NoError(t, err)
+	assert.NotEmpty(t, p.ID)
+	p.Close()
+}
+
 func TestNewPeerEvents(t *testing.T) {
 	p, err := NewPeer(rndName("test"), getTestOpts())
 	// done := false
@@ -45,6 +52,32 @@ func TestNewPeerEvents(t *testing.T) {
 	p.Close()
 	// <-time.After(time.Millisecond * 1000)
 	// assert.True(t, done)
+}
+
+func TestDuplicatedID(t *testing.T) {
+
+	peer1Name := rndName("duplicated")
+	peer2Name := peer1Name
+
+	peer1, err := NewPeer(peer1Name, getTestOpts())
+	assert.NoError(t, err)
+	defer peer1.Close()
+
+	peer2, err := NewPeer(peer2Name, getTestOpts())
+	assert.NoError(t, err)
+	defer peer2.Close()
+
+	_, err = peer1.Connect(peer2Name, nil)
+	assert.NoError(t, err)
+	_, err = peer2.Connect(peer1Name, nil)
+	assert.NoError(t, err)
+
+	peer2.On("error", func(raw interface{}) {
+		err := raw.(error)
+		assert.Error(t, err)
+	})
+
+	<-time.After(time.Second * 3)
 }
 
 func TestHelloWorld(t *testing.T) {
@@ -151,6 +184,7 @@ func TestMediaCall(t *testing.T) {
 		// Answer the call, providing our mediaStream
 		call := raw.(MediaConnection)
 		var mediaStream webrtc.TrackLocal
+
 		call.Answer(mediaStream, nil)
 		call.On("stream", func(raw interface{}) {
 			// stream := raw.(MediaStream)
