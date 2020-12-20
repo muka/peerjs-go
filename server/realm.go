@@ -81,7 +81,7 @@ func (r *Realm) SetClient(client IClient, id string) {
 //RemoveClientByID remove a client by id
 func (r *Realm) RemoveClientByID(id string) bool {
 	client := r.GetClientByID(id)
-	if client != nil {
+	if client == nil {
 		return false
 	}
 	r.cMutex.Lock()

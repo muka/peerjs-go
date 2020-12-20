@@ -19,8 +19,10 @@ func TestRealmClients(t *testing.T) {
 
 func TestRealmMessage(t *testing.T) {
 	r := NewRealm()
-	c0 := peer.Message{}
-	r.AddMessageToQueue("1", c0)
+	c0 := NewClient("1", "a")
+	r.SetClient(c0, c0.GetID())
+	m0 := peer.Message{}
+	r.AddMessageToQueue("1", m0)
 	c1 := r.GetClientByID("1")
 	assert.Equal(t, c0, c1)
 }
