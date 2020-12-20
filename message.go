@@ -15,6 +15,14 @@ type Payload struct {
 	Browser       string                     `json:"browser,omitempty"`
 }
 
+//IMessage message interface
+type IMessage interface {
+	GetType() string
+	GetSrc() string
+	GetDst() string
+	GetPayload() Payload
+}
+
 // Message the IMessage implementation
 type Message struct {
 	Type    string  `json:"type"`
