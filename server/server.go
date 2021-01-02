@@ -7,9 +7,9 @@ func New(opts Options) *PeerServer {
 
 	s.realm = NewRealm()
 	s.auth = NewAuth(s.realm, opts)
-	s.wss = NewWebSocket(opts)
+	s.wss = NewWebSocketServer(opts)
 
-	s.http = NewHTTPServer(opts)
+	s.http = NewHTTPServer(s.realm, opts)
 
 	s.http.AddHandlers(
 		s.wss.Handler(),
@@ -24,7 +24,7 @@ type PeerServer struct {
 	http  *HTTPServer
 	realm IRealm
 	auth  *Auth
-	wss   *WebSocket
+	wss   *WebSocketServer
 }
 
 // Stop stops the peer server

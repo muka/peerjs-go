@@ -9,17 +9,17 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-//NewWebSocket create a new WebSocket
-func NewWebSocket(opts Options) *WebSocket {
-	ws := WebSocket{
+//NewWebSocketServer create a new WebSocketServer
+func NewWebSocketServer(opts Options) *WebSocketServer {
+	ws := WebSocketServer{
 		upgrader: websocket.Upgrader{},
-		log:      createLogger("websocket", opts),
+		log:      createLogger("websocket-server", opts),
 	}
 	return &ws
 }
 
-// WebSocket wrap the websocket server
-type WebSocket struct {
+// WebSocketServer wrap the websocket server
+type WebSocketServer struct {
 	upgrader websocket.Upgrader
 	clients  []*websocket.Conn
 	cMutex   sync.Mutex
@@ -27,7 +27,7 @@ type WebSocket struct {
 }
 
 // Send send data to the clients
-func (wss *WebSocket) Send(data []byte) {
+func (wss *WebSocketServer) Send(data []byte) {
 	for _, conn := range wss.clients {
 		err := conn.WriteMessage(websocket.BinaryMessage, data)
 		if err != nil {
@@ -37,7 +37,7 @@ func (wss *WebSocket) Send(data []byte) {
 }
 
 // Handler expose the http handler for websocket
-func (wss *WebSocket) Handler() mux.MiddlewareFunc {
+func (wss *WebSocketServer) Handler() mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			c, err := wss.upgrader.Upgrade(w, r, nil)

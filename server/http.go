@@ -1,11 +1,15 @@
 package server
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/muka/peer"
+	"github.com/sirupsen/logrus"
 )
 
 //NewOptions create default options
@@ -40,14 +44,18 @@ type Options struct {
 
 //HTTPServer peer server
 type HTTPServer struct {
-	opts     Options
-	router   *mux.Router
-	http     *http.Server
-	handlers []func(http.HandlerFunc) http.HandlerFunc
+	opts           Options
+	realm          IRealm
+	log            *logrus.Entry
+	messageHandler *MessageHandler
+	router         *mux.Router
+	http           *http.Server
+	handlers       []func(http.HandlerFunc) http.HandlerFunc
 }
 
 // NewHTTPServer init a server
-func NewHTTPServer(opts Options) *HTTPServer {
+func NewHTTPServer(realm IRealm, opts Options) *HTTPServer {
+
 	r := mux.NewRouter()
 
 	srv := &http.Server{
@@ -59,22 +67,94 @@ func NewHTTPServer(opts Options) *HTTPServer {
 	}
 
 	s := &HTTPServer{
-		opts:     opts,
-		router:   r,
-		http:     srv,
-		handlers: []func(http.HandlerFunc) http.HandlerFunc{},
+		opts:           opts,
+		realm:          realm,
+		log:            createLogger("http", opts),
+		router:         r,
+		http:           srv,
+		handlers:       []func(http.HandlerFunc) http.HandlerFunc{},
+		messageHandler: NewMessageHandler(realm, nil, opts),
 	}
 
 	return s
 }
 
 func (h *HTTPServer) handler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		params := r.URL.Query()
+		id := params.Get("id")
 
-	}
+		if id == "" {
+			http.Error(w, "Missing client id", http.StatusBadRequest)
+			return
+		}
+
+		client := h.realm.GetClientByID(id)
+		if client == nil {
+			http.Error(w, fmt.Sprintf("Client %s not found", id), http.StatusNotFound)
+			return
+		}
+
+		body, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, "Failed to read body", http.StatusInternalServerError)
+			return
+		}
+
+		payload := new(peer.Message)
+		err = json.Unmarshal(body, payload)
+		if err != nil {
+			http.Error(w, "Failed to decode message", http.StatusInternalServerError)
+			return
+		}
+
+		message := peer.Message{
+			Type:    payload.Type,
+			Src:     id,
+			Dst:     payload.Dst,
+			Payload: payload.Payload,
+		}
+
+		h.messageHandler.Handle(client, message)
+
+		w.WriteHeader(200)
+		w.Write([]byte{})
+	})
 }
 
 func (h *HTTPServer) registerHandlers() {
+
+	baseRoute := h.router.PathPrefix(
+		fmt.Sprintf("%s/%s", h.opts.Path, h.opts.Key),
+	).Subrouter()
+
+	// public API
+	baseRoute.
+		HandleFunc("/id", func(rw http.ResponseWriter, r *http.Request) {
+			rw.Header().Add("content-type", "text/html")
+			rw.Write([]byte(h.realm.GenerateClientID()))
+		}).
+		Methods("GET")
+
+	baseRoute.
+		HandleFunc("/peers", func(rw http.ResponseWriter, r *http.Request) {
+			if !h.opts.AllowDiscovery {
+				rw.WriteHeader(http.StatusUnauthorized)
+				rw.Write([]byte{})
+				return
+			}
+
+			rw.Header().Add("content-type", "application/json")
+			raw, err := json.Marshal(h.realm.GetClientsIds())
+			if err != nil {
+				h.log.Warnf("/peers: Marshal error %s", err)
+				rw.WriteHeader(http.StatusInternalServerError)
+				rw.Write([]byte{})
+				return
+			}
+			rw.Write(raw)
+		}).
+		Methods("GET")
 
 	paths := []string{
 		"/offer",
@@ -84,7 +164,9 @@ func (h *HTTPServer) registerHandlers() {
 	}
 
 	for _, p := range paths {
-		h.router.Path(p).HandlerFunc(h.handler())
+		baseRoute.
+			HandleFunc(p, h.handler()).
+			Methods("POST")
 	}
 
 }

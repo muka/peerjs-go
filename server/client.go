@@ -8,7 +8,7 @@ type IClient interface {
 	SetSocket(socket *WebSocket)
 	GetLastPing() int64
 	SetLastPing(lastPing int64)
-	Send(data []byte)
+	Send(data []byte) error
 }
 
 // Client implementation
@@ -58,6 +58,6 @@ func (c *Client) SetLastPing(lastPing int64) {
 }
 
 //Send send data
-func (c *Client) Send(data []byte) {
-	c.socket.Send(data)
+func (c *Client) Send(data []byte) error {
+	return c.socket.Send(data)
 }
