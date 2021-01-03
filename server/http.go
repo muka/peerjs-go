@@ -81,8 +81,8 @@ func NewHTTPServer(realm IRealm, opts Options) *HTTPServer {
 
 func (h *HTTPServer) handler() http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		params := r.URL.Query()
-		id := params.Get("id")
+		vars := mux.Vars(r)
+		id := vars["id"]
 
 		if id == "" {
 			http.Error(w, "Missing client id", http.StatusBadRequest)
@@ -124,20 +124,18 @@ func (h *HTTPServer) handler() http.HandlerFunc {
 
 func (h *HTTPServer) registerHandlers() {
 
-	baseRoute := h.router.PathPrefix(
-		fmt.Sprintf("%s/%s", h.opts.Path, h.opts.Key),
-	).Subrouter()
+	baseRoute := h.router.PathPrefix(h.opts.Path).Subrouter()
 
 	// public API
 	baseRoute.
-		HandleFunc("/id", func(rw http.ResponseWriter, r *http.Request) {
+		HandleFunc("/{key}/id", func(rw http.ResponseWriter, r *http.Request) {
 			rw.Header().Add("content-type", "text/html")
 			rw.Write([]byte(h.realm.GenerateClientID()))
 		}).
 		Methods("GET")
 
 	baseRoute.
-		HandleFunc("/peers", func(rw http.ResponseWriter, r *http.Request) {
+		HandleFunc("/{key}/peers", func(rw http.ResponseWriter, r *http.Request) {
 			if !h.opts.AllowDiscovery {
 				rw.WriteHeader(http.StatusUnauthorized)
 				rw.Write([]byte{})
@@ -157,15 +155,16 @@ func (h *HTTPServer) registerHandlers() {
 		Methods("GET")
 
 	paths := []string{
-		"/offer",
-		"/candidate",
-		"/answer",
-		"/leave",
+		"offer",
+		"candidate",
+		"answer",
+		"leave",
 	}
 
 	for _, p := range paths {
+		endpoint := fmt.Sprintf("/{key}/{id}/{token}/%s", p)
 		baseRoute.
-			HandleFunc(p, h.handler()).
+			HandleFunc(endpoint, h.handler()).
 			Methods("POST")
 	}
 

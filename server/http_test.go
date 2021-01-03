@@ -19,7 +19,7 @@ func TestHTTPServerGetID(t *testing.T) {
 	opts.AllowDiscovery = true
 
 	getURL := func(path string) string {
-		return fmt.Sprintf("http://%s:%d%s", opts.Host, opts.Port, path)
+		return fmt.Sprintf("http://%s:%d/%s%s", opts.Host, opts.Port, opts.Key, path)
 	}
 
 	realm := NewRealm()
@@ -48,7 +48,7 @@ func TestHTTPServerNoDiscovery(t *testing.T) {
 	opts.AllowDiscovery = false
 
 	getURL := func(path string) string {
-		return fmt.Sprintf("http://%s:%d%s", opts.Host, opts.Port, path)
+		return fmt.Sprintf("http://%s:%d/%s%s", opts.Host, opts.Port, opts.Key, path)
 	}
 
 	realm := NewRealm()
@@ -71,6 +71,9 @@ func TestHTTPServerExchange(t *testing.T) {
 	opts.Host = "localhost"
 	opts.AllowDiscovery = false
 
+	id := "myid"
+	token := "mytoken"
+
 	getURL := func(path string) string {
 		return fmt.Sprintf("http://%s:%d%s", opts.Host, opts.Port, path)
 	}
@@ -92,14 +95,19 @@ func TestHTTPServerExchange(t *testing.T) {
 
 	raw, err := json.Marshal(msg)
 	assert.NoError(t, err)
-	resp, err := http.Post(getURL("/offer"), "application/json", bytes.NewReader(raw))
-	assert.NoError(t, err)
-	assert.NotNil(t, resp)
-	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	url := getURL(fmt.Sprintf("/%s/%s/%s/offer", opts.Key, id, token))
 
-	resp, err = http.Post(getURL(fmt.Sprintf("/offer/")), "application/json", bytes.NewReader(raw))
+	// client not found
+	resp, err := http.Post(url, "application/json", bytes.NewReader(raw))
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+
+	c := NewClient(id, token)
+	srv.realm.SetClient(c, id)
+
+	resp, err = http.Post(url, "application/json", bytes.NewReader(raw))
 	assert.NoError(t, err)
 	assert.NotNil(t, resp)
-	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 }
