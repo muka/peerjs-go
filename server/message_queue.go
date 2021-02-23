@@ -43,6 +43,8 @@ func (mq *MessageQueue) AddMessage(message peer.IMessage) {
 //ReadMessage read last message
 func (mq *MessageQueue) ReadMessage() peer.IMessage {
 	if len(mq.messages) > 0 {
+		mq.mMutex.Lock()
+		defer mq.mMutex.Unlock()
 		mq.lastReadAt = getTime()
 		msg := mq.messages[0]
 		mq.messages = mq.messages[1:]

@@ -47,12 +47,18 @@ func (s *Socket) buildBaseURL() string {
 		proto = "wss"
 	}
 	port := strconv.Itoa(s.opts.Port)
+
+	path := s.opts.Path
+	if path == "/" {
+		path = ""
+	}
+
 	return fmt.Sprintf(
 		"%s://%s:%s%s/peerjs?key=%s",
 		proto,
 		s.opts.Host,
 		port,
-		s.opts.Path,
+		path,
 		s.opts.Key,
 	)
 }

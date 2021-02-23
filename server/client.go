@@ -1,11 +1,13 @@
 package server
 
+import "github.com/gorilla/websocket"
+
 // IClient client interface
 type IClient interface {
 	GetID() string
 	GetToken() string
-	GetSocket() *WebSocket
-	SetSocket(socket *WebSocket)
+	GetSocket() *websocket.Conn
+	SetSocket(socket *websocket.Conn)
 	GetLastPing() int64
 	SetLastPing(lastPing int64)
 	Send(data []byte) error
@@ -15,7 +17,7 @@ type IClient interface {
 type Client struct {
 	id       string
 	token    string
-	socket   *WebSocket
+	socket   *websocket.Conn
 	lastPing int64
 }
 
@@ -38,12 +40,12 @@ func (c *Client) GetToken() string {
 }
 
 //GetSocket return the web socket server
-func (c *Client) GetSocket() *WebSocket {
+func (c *Client) GetSocket() *websocket.Conn {
 	return c.socket
 }
 
 //SetSocket set the web socket handler
-func (c *Client) SetSocket(socket *WebSocket) {
+func (c *Client) SetSocket(socket *websocket.Conn) {
 	c.socket = socket
 }
 
@@ -59,5 +61,5 @@ func (c *Client) SetLastPing(lastPing int64) {
 
 //Send send data
 func (c *Client) Send(data []byte) error {
-	return c.socket.Send(data)
+	return c.socket.WriteMessage(websocket.BinaryMessage, data)
 }

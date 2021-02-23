@@ -27,4 +27,13 @@ const (
 	MessageTypeIDTaken = "ID-TAKEN"
 	// MessageTypeError ERROR
 	MessageTypeError = "ERROR"
+
+	// WebsocketEventMessage message
+	WebsocketEventMessage = "message"
+	// WebsocketEventConnection connection
+	WebsocketEventConnection = "connection"
+	// WebsocketEventError error
+	WebsocketEventError = "error"
+	// WebsocketEventClose close
+	WebsocketEventClose = "close"
 )

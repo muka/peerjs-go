@@ -58,20 +58,12 @@ func NewHTTPServer(realm IRealm, opts Options) *HTTPServer {
 
 	r := mux.NewRouter()
 
-	srv := &http.Server{
-		Addr:           fmt.Sprintf("%s:%d", opts.Host, opts.Port),
-		Handler:        r,
-		ReadTimeout:    10 * time.Second,
-		WriteTimeout:   10 * time.Second,
-		MaxHeaderBytes: 1 << 20,
-	}
-
 	s := &HTTPServer{
-		opts:           opts,
-		realm:          realm,
-		log:            createLogger("http", opts),
-		router:         r,
-		http:           srv,
+		opts:   opts,
+		realm:  realm,
+		log:    createLogger("http", opts),
+		router: r,
+		// http:           srv,
 		handlers:       []func(http.HandlerFunc) http.HandlerFunc{},
 		messageHandler: NewMessageHandler(realm, nil, opts),
 	}
@@ -122,19 +114,22 @@ func (h *HTTPServer) handler() http.HandlerFunc {
 	})
 }
 
-func (h *HTTPServer) registerHandlers() {
+func (h *HTTPServer) registerHandlers() error {
 
 	baseRoute := h.router.PathPrefix(h.opts.Path).Subrouter()
 
 	// public API
-	baseRoute.
+	err := baseRoute.
 		HandleFunc("/{key}/id", func(rw http.ResponseWriter, r *http.Request) {
 			rw.Header().Add("content-type", "text/html")
 			rw.Write([]byte(h.realm.GenerateClientID()))
 		}).
-		Methods("GET")
+		Methods("GET").GetError()
+	if err != nil {
+		return err
+	}
 
-	baseRoute.
+	err = baseRoute.
 		HandleFunc("/{key}/peers", func(rw http.ResponseWriter, r *http.Request) {
 			if !h.opts.AllowDiscovery {
 				rw.WriteHeader(http.StatusUnauthorized)
@@ -152,7 +147,21 @@ func (h *HTTPServer) registerHandlers() {
 			}
 			rw.Write(raw)
 		}).
-		Methods("GET")
+		Methods("GET").GetError()
+	if err != nil {
+		return err
+	}
+
+	// handle WS route
+	err = baseRoute.
+		HandleFunc("/peerjs", func(rw http.ResponseWriter, r *http.Request) {
+			rw.Header().Add("content-type", "text/html")
+			rw.Write([]byte{})
+		}).
+		Methods("GET").GetError()
+	if err != nil {
+		return err
+	}
 
 	paths := []string{
 		"offer",
@@ -163,11 +172,15 @@ func (h *HTTPServer) registerHandlers() {
 
 	for _, p := range paths {
 		endpoint := fmt.Sprintf("/{key}/{id}/{token}/%s", p)
-		baseRoute.
+		err := baseRoute.
 			HandleFunc(endpoint, h.handler()).
-			Methods("POST")
+			Methods("POST").GetError()
+		if err != nil {
+			return err
+		}
 	}
 
+	return nil
 }
 
 //AddHandlers register HTTP handlers
@@ -177,7 +190,20 @@ func (h *HTTPServer) AddHandlers(middlewares ...mux.MiddlewareFunc) {
 
 //Start start the HTTP server
 func (h *HTTPServer) Start() error {
-	h.registerHandlers()
+
+	err := h.registerHandlers()
+	if err != nil {
+		return err
+	}
+
+	h.http = &http.Server{
+		Addr:           fmt.Sprintf("%s:%d", h.opts.Host, h.opts.Port),
+		Handler:        h.router,
+		ReadTimeout:    10 * time.Second,
+		WriteTimeout:   10 * time.Second,
+		MaxHeaderBytes: 1 << 20,
+	}
+
 	return h.http.ListenAndServe()
 }
 

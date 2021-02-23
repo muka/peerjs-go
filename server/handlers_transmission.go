@@ -1,7 +1,6 @@
 package server
 
 import (
-	"encoding/json"
 	"errors"
 
 	"github.com/muka/peer"
@@ -17,21 +16,17 @@ func NewTransmissionHandler(realm IRealm, opts Options) func(client IClient, mes
 		log := createLogger("client:"+client.GetID(), opts)
 
 		mtype := message.GetType()
-		srcId := message.GetSrc()
-		dstId := message.GetDst()
+		srcID := message.GetSrc()
+		dstID := message.GetDst()
 
-		destinationClient := realm.GetClientByID(dstId)
+		destinationClient := realm.GetClientByID(dstID)
 
 		// User is connected!
 		if destinationClient != nil {
 			socket := destinationClient.GetSocket()
 			var err error
-			var data []byte
 			if socket != nil {
-				data, err = json.Marshal(message)
-				if err != nil {
-					err = socket.Send(data)
-				}
+				err = socket.WriteJSON(message)
 			} else {
 				err = errors.New("Peer dead")
 			}
@@ -49,18 +44,18 @@ func NewTransmissionHandler(realm IRealm, opts Options) func(client IClient, mes
 
 				handle(client, peer.Message{
 					Type: MessageTypeLeave,
-					Src:  dstId,
-					Dst:  srcId,
+					Src:  dstID,
+					Dst:  srcID,
 				})
 			}
 
 		} else {
 			// Wait for this client to connect/reconnect (XHR) for important
 			// messages.
-			if (mtype != MessageTypeLeave && mtype != MessageTypeExpire) && dstId != "" {
-				realm.AddMessageToQueue(dstId, message)
-			} else if mtype == MessageTypeLeave && dstId == "" {
-				realm.RemoveClientByID(srcId)
+			if (mtype != MessageTypeLeave && mtype != MessageTypeExpire) && dstID != "" {
+				realm.AddMessageToQueue(dstID, message)
+			} else if mtype == MessageTypeLeave && dstID == "" {
+				realm.RemoveClientByID(srcID)
 			} else {
 				// Unavailable destination specified with message LEAVE or EXPIRE
 				// Ignore

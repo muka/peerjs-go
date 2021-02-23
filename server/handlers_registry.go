@@ -26,7 +26,7 @@ type HandlersRegistry struct {
 
 // RegisterHandler register an handler
 func (r *HandlersRegistry) RegisterHandler(messageType string, handler Handler) {
-	if _, ok := r.handlers[messageType]; !ok {
+	if _, ok := r.handlers[messageType]; ok {
 		return
 	}
 	r.handlers[messageType] = handler

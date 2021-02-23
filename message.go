@@ -13,6 +13,7 @@ type Payload struct {
 	Candidate     *webrtc.ICECandidateInit   `json:"candidate,omitempty"`
 	SDP           *webrtc.SessionDescription `json:"sdp,omitempty"`
 	Browser       string                     `json:"browser,omitempty"`
+	Msg           string                     `json:"msg,omitempty"`
 }
 
 //IMessage message interface
