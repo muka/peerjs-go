@@ -29,12 +29,18 @@ func (a *API) buildURL(method string) string {
 	if a.opts.Secure {
 		proto = "https"
 	}
+
+	path := a.opts.Path
+	if path == "/" {
+		path = ""
+	}
+
 	return fmt.Sprintf(
 		"%s://%s:%d%s/%s/%s?ts=%d%d",
 		proto,
 		a.opts.Host,
 		a.opts.Port,
-		a.opts.Path,
+		path,
 		a.opts.Key,
 		method,
 		time.Now().UnixNano(),
