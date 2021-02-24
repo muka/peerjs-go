@@ -33,8 +33,8 @@ type Options struct {
 	Port            int
 	Host            string
 	LogLevel        string
-	ExpireTimeout   int
-	AliveTimeout    int
+	ExpireTimeout   int64
+	AliveTimeout    int64
 	Key             string
 	Path            string
 	ConcurrentLimit int

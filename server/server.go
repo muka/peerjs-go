@@ -19,6 +19,16 @@ func New(opts Options) *PeerServer {
 		s.auth.Handler(),
 	)
 
+	s.checkBrokenConnections = NewCheckBrokenConnections(
+		s.realm,
+		opts,
+		func(client IClient) {
+			s.Emit("disconnect", client)
+		},
+	)
+
+	s.messageExpire = NewMessagesExpire(s.realm, opts, s.http.messageHandler)
+
 	s.initialize()
 
 	return s
@@ -27,10 +37,12 @@ func New(opts Options) *PeerServer {
 //PeerServer wrap the peer server functionalities
 type PeerServer struct {
 	peer.Emitter
-	http  *HTTPServer
-	realm IRealm
-	auth  *Auth
-	wss   *WebSocketServer
+	http                   *HTTPServer
+	realm                  IRealm
+	auth                   *Auth
+	wss                    *WebSocketServer
+	checkBrokenConnections *CheckBrokenConnections
+	messageExpire          IMessagesExpire
 }
 
 func (p *PeerServer) initialize() {
@@ -67,11 +79,15 @@ func (p *PeerServer) initialize() {
 		p.Emit("error", err)
 	})
 
+	p.messageExpire.Start()
+	p.checkBrokenConnections.Start()
 }
 
 // Stop stops the peer server
 func (p *PeerServer) Stop() error {
 	p.http.Stop()
+	p.messageExpire.Stop()
+	p.checkBrokenConnections.Stop()
 	return nil
 }
 

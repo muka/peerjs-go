@@ -26,6 +26,7 @@ func NewClient(id string, token string) *Client {
 	c := new(Client)
 	c.id = id
 	c.token = token
+	c.SetLastPing(getTime())
 	return c
 }
 
