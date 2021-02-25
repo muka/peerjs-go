@@ -1,12 +1,14 @@
 package server
 
-import "github.com/muka/peer"
+import (
+	"github.com/muka/peer/emitter"
+)
 
 //New creates a new PeerServer
 func New(opts Options) *PeerServer {
 
 	s := new(PeerServer)
-	s.Emitter = peer.NewEmitter()
+	s.Emitter = emitter.NewEmitter()
 
 	s.realm = NewRealm()
 	s.auth = NewAuth(s.realm, opts)
@@ -36,7 +38,7 @@ func New(opts Options) *PeerServer {
 
 //PeerServer wrap the peer server functionalities
 type PeerServer struct {
-	peer.Emitter
+	emitter.Emitter
 	http                   *HTTPServer
 	realm                  IRealm
 	auth                   *Auth

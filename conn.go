@@ -1,6 +1,8 @@
 package peer
 
 import (
+	"github.com/muka/peer/emitter"
+	"github.com/muka/peer/models"
 	"github.com/pion/webrtc/v3"
 	"github.com/sirupsen/logrus"
 )
@@ -15,14 +17,14 @@ type Connection interface {
 	GetPeerConnection() *webrtc.PeerConnection
 	SetPeerConnection(pc *webrtc.PeerConnection)
 	Close() error
-	HandleMessage(*Message) error
+	HandleMessage(*models.Message) error
 	Emit(string, interface{})
 	GetOptions() ConnectionOptions
 }
 
 func newBaseConnection(connType string, peer *Peer, opts ConnectionOptions) BaseConnection {
 	return BaseConnection{
-		Emitter:    NewEmitter(),
+		Emitter:    emitter.NewEmitter(),
 		Type:       connType,
 		Provider:   peer,
 		log:        createLogger(connType, opts.Debug),
@@ -33,7 +35,7 @@ func newBaseConnection(connType string, peer *Peer, opts ConnectionOptions) Base
 
 // BaseConnection shared base connection
 type BaseConnection struct {
-	Emitter
+	emitter.Emitter
 	// id connection ID
 	id string
 	// peerID peer ID of the connection
@@ -100,7 +102,7 @@ func (c *BaseConnection) Close() error {
 }
 
 // HandleMessage handles incoming messages
-func (c *BaseConnection) HandleMessage(msg *Message) error {
+func (c *BaseConnection) HandleMessage(msg *models.Message) error {
 	panic("Not implemented!")
 }
 

@@ -8,7 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/muka/peer"
+	"github.com/muka/peer/enums"
+	"github.com/muka/peer/models"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -86,11 +87,11 @@ func TestHTTPServerExchange(t *testing.T) {
 	// wait for server to start
 	<-time.After(time.Millisecond * 200)
 
-	msg := peer.Message{
-		Type:    peer.ServerMessageTypeOffer,
+	msg := models.Message{
+		Type:    enums.ServerMessageTypeOffer,
 		Src:     "foo",
 		Dst:     "bar",
-		Payload: peer.Payload{},
+		Payload: models.Payload{},
 	}
 
 	raw, err := json.Marshal(msg)

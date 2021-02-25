@@ -8,20 +8,23 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/muka/peer/emitter"
+	"github.com/muka/peer/enums"
+	"github.com/muka/peer/models"
 	"github.com/sirupsen/logrus"
 )
 
 // SocketEvent carries an event from the socket
 type SocketEvent struct {
 	Type    string
-	Message *Message
+	Message *models.Message
 	Error   error
 }
 
 //NewSocket create a socket instance
 func NewSocket(opts Options) *Socket {
 	s := &Socket{
-		Emitter: NewEmitter(),
+		Emitter: emitter.NewEmitter(),
 		log:     createLogger("socket", opts.Debug),
 	}
 	s.opts = opts
@@ -31,7 +34,7 @@ func NewSocket(opts Options) *Socket {
 
 //Socket abstract websocket exposing an event emitter like interface
 type Socket struct {
-	Emitter
+	emitter.Emitter
 	id           string
 	opts         Options
 	baseURL      string
@@ -138,13 +141,13 @@ func (s *Socket) Start(id string, token string) error {
 
 			if msgType == websocket.TextMessage {
 
-				msg := Message{}
+				msg := models.Message{}
 				err = json.Unmarshal(raw, &msg)
 				if err != nil {
 					s.log.Errorf("Failed to decode message=%s %s", string(raw), err)
 				}
 
-				s.Emit(SocketEventTypeMessage, SocketEvent{SocketEventTypeMessage, &msg, err})
+				s.Emit(enums.SocketEventTypeMessage, SocketEvent{enums.SocketEventTypeMessage, &msg, err})
 			} else {
 				s.log.Warnf("Unmanaged socket WS message type %d", msgType)
 			}

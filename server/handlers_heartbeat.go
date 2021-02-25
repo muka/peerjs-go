@@ -1,10 +1,12 @@
 package server
 
-import "github.com/muka/peer"
+import (
+	"github.com/muka/peer/models"
+)
 
 //NewHeartbeatHandler handles a heartbeat
-func NewHeartbeatHandler(opts Options) func(client IClient, message peer.IMessage) bool {
-	return func(client IClient, message peer.IMessage) bool {
+func NewHeartbeatHandler(opts Options) func(client IClient, message models.IMessage) bool {
+	return func(client IClient, message models.IMessage) bool {
 		if client != nil {
 			client.SetLastPing(getTime())
 		}

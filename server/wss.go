@@ -9,20 +9,21 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
-	"github.com/muka/peer"
+	"github.com/muka/peer/emitter"
+	"github.com/muka/peer/models"
 	"github.com/sirupsen/logrus"
 )
 
 // ClientMessage wrap a message received by a client
 type ClientMessage struct {
 	Client  IClient
-	Message *peer.Message
+	Message *models.Message
 }
 
 //NewWebSocketServer create a new WebSocketServer
 func NewWebSocketServer(realm IRealm, opts Options) *WebSocketServer {
 	wss := WebSocketServer{
-		Emitter:  peer.NewEmitter(),
+		Emitter:  emitter.NewEmitter(),
 		upgrader: websocket.Upgrader{},
 		log:      createLogger("websocket-server", opts),
 		realm:    realm,
@@ -33,7 +34,7 @@ func NewWebSocketServer(realm IRealm, opts Options) *WebSocketServer {
 
 // WebSocketServer wrap the websocket server
 type WebSocketServer struct {
-	peer.Emitter
+	emitter.Emitter
 	upgrader websocket.Upgrader
 	clients  []*websocket.Conn
 	cMutex   sync.Mutex
@@ -54,9 +55,9 @@ func (wss *WebSocketServer) Send(data []byte) {
 
 //onSocketConnection called when a client connect
 func (wss *WebSocketServer) sendErrorAndClose(conn *websocket.Conn, msg string) error {
-	err := conn.WriteJSON(peer.Message{
+	err := conn.WriteJSON(models.Message{
 		Type: MessageTypeError,
-		Payload: peer.Payload{
+		Payload: models.Payload{
 			Msg: msg,
 		},
 	})
@@ -100,7 +101,7 @@ func (wss *WebSocketServer) configureWS(conn *websocket.Conn, client IClient) er
 				continue
 			}
 
-			message := new(peer.Message)
+			message := new(models.Message)
 			err = json.Unmarshal(data, message)
 			if err != nil {
 				wss.log.Errorf("client message unmarshal error: %s", err)
@@ -133,7 +134,7 @@ func (wss *WebSocketServer) registerClient(conn *websocket.Conn, id, token strin
 	client := NewClient(id, token)
 	wss.realm.SetClient(client, id)
 
-	err := conn.WriteJSON(peer.Message{Type: MessageTypeOpen})
+	err := conn.WriteJSON(models.Message{Type: MessageTypeOpen})
 	if err != nil {
 		return err
 	}
@@ -180,9 +181,9 @@ func (wss *WebSocketServer) onSocketConnection(conn *websocket.Conn, r *http.Req
 
 	if token != client.GetToken() {
 		// ID-taken, invalid token
-		err := conn.WriteJSON(peer.Message{
+		err := conn.WriteJSON(models.Message{
 			Type: MessageTypeIDTaken,
-			Payload: peer.Payload{
+			Payload: models.Payload{
 				Msg: "ID is taken",
 			},
 		})

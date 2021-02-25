@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/muka/peer"
+	"github.com/muka/peer/models"
 	"github.com/sirupsen/logrus"
 )
 
@@ -59,7 +59,7 @@ func (b *MessagesExpire) pruneOutstanding() {
 			seenKey := fmt.Sprintf("%s_%s", message.GetSrc(), message.GetDst())
 
 			if _, ok := seen[seenKey]; !ok {
-				b.messageHandler.Handle(nil, peer.Message{
+				b.messageHandler.Handle(nil, models.Message{
 					Type: MessageTypeExpire,
 					Src:  message.GetDst(),
 					Dst:  message.GetSrc(),

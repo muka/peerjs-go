@@ -1,10 +1,12 @@
 package server
 
-import "github.com/muka/peer"
+import (
+	"github.com/muka/peer/models"
+)
 
 //IMessageHandler interface for MessageHandler
 type IMessageHandler interface {
-	Handle(client IClient, message peer.IMessage) bool
+	Handle(client IClient, message models.IMessage) bool
 }
 
 //NewMessageHandler creates a new MessageHandler
@@ -22,11 +24,11 @@ func NewMessageHandler(realm IRealm, handlersRegistry IHandlersRegistry, opts Op
 	transmissionHandler := NewTransmissionHandler(realm, opts)
 	heartbeatHandler := NewHeartbeatHandler(opts)
 
-	handleHeartbeat := func(client IClient, message peer.IMessage) bool {
+	handleHeartbeat := func(client IClient, message models.IMessage) bool {
 		return heartbeatHandler(client, message)
 	}
 
-	handleTransmission := func(client IClient, message peer.IMessage) bool {
+	handleTransmission := func(client IClient, message models.IMessage) bool {
 		return transmissionHandler(client, message)
 	}
 
@@ -47,6 +49,6 @@ type MessageHandler struct {
 }
 
 //Handle handles a message
-func (m *MessageHandler) Handle(client IClient, message peer.IMessage) bool {
+func (m *MessageHandler) Handle(client IClient, message models.IMessage) bool {
 	return m.handlersRegistry.Handle(client, message)
 }

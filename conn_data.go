@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"errors"
 
+	"github.com/muka/peer/enums"
+	"github.com/muka/peer/models"
 	"github.com/pion/webrtc/v3"
 	"github.com/rs/xid"
 )
@@ -21,7 +23,7 @@ const (
 func NewDataConnection(peerID string, peer *Peer, opts ConnectionOptions) (*DataConnection, error) {
 
 	d := &DataConnection{
-		BaseConnection: newBaseConnection(ConnectionTypeData, peer, opts),
+		BaseConnection: newBaseConnection(enums.ConnectionTypeData, peer, opts),
 		buffer:         bytes.NewBuffer([]byte{}),
 		// encodingQueue:  NewEncodingQueue(),
 	}
@@ -40,7 +42,7 @@ func NewDataConnection(peerID string, peer *Peer, opts ConnectionOptions) (*Data
 
 	d.Serialization = opts.Serialization
 	if d.Serialization == "" {
-		d.Serialization = SerializationTypeRaw
+		d.Serialization = enums.SerializationTypeRaw
 	}
 
 	d.Reliable = opts.Reliable
@@ -97,7 +99,7 @@ func (d *DataConnection) configureDataChannel() {
 		//TODO
 		d.log.Debugf(`DC#%s dc connection success`, d.GetID())
 		d.Open = true
-		d.Emit(ConnectionEventTypeOpen, nil)
+		d.Emit(enums.ConnectionEventTypeOpen, nil)
 	})
 
 	d.DataChannel.OnMessage(func(msg webrtc.DataChannelMessage) {
@@ -119,9 +121,9 @@ func (d *DataConnection) handleDataMessage(msg webrtc.DataChannelMessage) {
 	// 	d.Serialization == SerializationTypeBinaryUTF8
 
 	if msg.IsString {
-		d.Emit(ConnectionEventTypeData, string(msg.Data))
+		d.Emit(enums.ConnectionEventTypeData, string(msg.Data))
 	} else {
-		d.Emit(ConnectionEventTypeData, msg.Data)
+		d.Emit(enums.ConnectionEventTypeData, msg.Data)
 	}
 
 	// if (isBinarySerialization) {
@@ -212,7 +214,7 @@ func (d *DataConnection) Close() error {
 
 	d.Open = false
 
-	d.Emit(ConnectionEventTypeClose, nil)
+	d.Emit(enums.ConnectionEventTypeClose, nil)
 	return nil
 }
 
@@ -221,7 +223,7 @@ func (d *DataConnection) Send(data []byte, chunked bool) error {
 	if !d.Open {
 		err := errors.New("Connection is not open. You should listen for the `open` event before sending messages")
 		d.Emit(
-			ConnectionEventTypeError,
+			enums.ConnectionEventTypeError,
 			err,
 		)
 		return err
@@ -328,14 +330,14 @@ func (d *DataConnection) Send(data []byte, chunked bool) error {
 // }
 
 // HandleMessage handles incoming messages
-func (d *DataConnection) HandleMessage(message *Message) error {
+func (d *DataConnection) HandleMessage(message *models.Message) error {
 	payload := message.Payload
 
 	switch message.Type {
-	case ServerMessageTypeAnswer:
+	case enums.ServerMessageTypeAnswer:
 		d.negotiator.handleSDP(message.Type, *payload.SDP)
 		break
-	case ServerMessageTypeCandidate:
+	case enums.ServerMessageTypeCandidate:
 		err := d.negotiator.HandleCandidate(payload.Candidate)
 		if err != nil {
 			d.log.Errorf("Failed to handle candidate for peer=%s: %s", d.peerID, err)

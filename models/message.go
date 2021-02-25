@@ -1,4 +1,4 @@
-package peer
+package models
 
 import "github.com/pion/webrtc/v3"
 

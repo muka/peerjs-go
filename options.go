@@ -1,6 +1,8 @@
 package peer
 
 import (
+	"github.com/muka/peer/enums"
+	"github.com/muka/peer/models"
 	"github.com/pion/webrtc/v3"
 	"github.com/rs/xid"
 )
@@ -57,7 +59,7 @@ type Options struct {
 // NewConnectionOptions return a ConnectionOptions with defaults
 func NewConnectionOptions() *ConnectionOptions {
 	return &ConnectionOptions{
-		Serialization: SerializationTypeRaw,
+		Serialization: enums.SerializationTypeRaw,
 		Debug:         -1,
 	}
 }
@@ -67,7 +69,7 @@ type ConnectionOptions struct {
 	//ConnectionID
 	ConnectionID string
 	//Payload
-	Payload Payload
+	Payload models.Payload
 	//Label A unique label by which you want to identify this data connection. If left unspecified, a label will be generated at random.
 	Label string
 	// Metadata associated with the connection, passed in by whoever initiated the connection.

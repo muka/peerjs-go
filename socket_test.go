@@ -5,15 +5,19 @@ import (
 	"testing"
 	"time"
 
+	"github.com/muka/peer/enums"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNewSocket(t *testing.T) {
-	s := NewSocket(getTestOpts())
+	srv, srvOpts := startServer()
+	srv.Start()
+	defer srv.Stop()
+	s := NewSocket(getTestOpts(srvOpts))
 	done := false
-	s.On(SocketEventTypeMessage, func(data interface{}) {
+	s.On(enums.SocketEventTypeMessage, func(data interface{}) {
 		ev := data.(SocketEvent)
-		assert.Equal(t, ev.Type, SocketEventTypeMessage)
+		assert.Equal(t, ev.Type, enums.SocketEventTypeMessage)
 		log.Println("socket received")
 		done = true
 	})

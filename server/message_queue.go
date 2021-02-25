@@ -3,7 +3,7 @@ package server
 import (
 	"sync"
 
-	"github.com/muka/peer"
+	"github.com/muka/peer/models"
 )
 
 // NewMessageQueue creates a new MessageQueue
@@ -16,15 +16,15 @@ func NewMessageQueue() *MessageQueue {
 // IMessageQueue message queue interface
 type IMessageQueue interface {
 	GetLastReadAt() int64
-	AddMessage(message peer.IMessage)
-	ReadMessage() peer.IMessage
-	GetMessages() []peer.IMessage
+	AddMessage(message models.IMessage)
+	ReadMessage() models.IMessage
+	GetMessages() []models.IMessage
 }
 
 //MessageQueue type
 type MessageQueue struct {
 	lastReadAt int64
-	messages   []peer.IMessage
+	messages   []models.IMessage
 	mMutex     sync.Mutex
 }
 
@@ -34,14 +34,14 @@ func (mq *MessageQueue) GetLastReadAt() int64 {
 }
 
 //AddMessage add message to queue
-func (mq *MessageQueue) AddMessage(message peer.IMessage) {
+func (mq *MessageQueue) AddMessage(message models.IMessage) {
 	mq.mMutex.Lock()
 	defer mq.mMutex.Unlock()
 	mq.messages = append(mq.messages, message)
 }
 
 //ReadMessage read last message
-func (mq *MessageQueue) ReadMessage() peer.IMessage {
+func (mq *MessageQueue) ReadMessage() models.IMessage {
 	if len(mq.messages) > 0 {
 		mq.mMutex.Lock()
 		defer mq.mMutex.Unlock()
@@ -54,6 +54,6 @@ func (mq *MessageQueue) ReadMessage() peer.IMessage {
 }
 
 //GetMessages return all queued messages
-func (mq *MessageQueue) GetMessages() []peer.IMessage {
+func (mq *MessageQueue) GetMessages() []models.IMessage {
 	return mq.messages
 }

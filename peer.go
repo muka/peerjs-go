@@ -5,6 +5,9 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/muka/peer/emitter"
+	"github.com/muka/peer/enums"
+	"github.com/muka/peer/models"
 	"github.com/pion/webrtc/v3"
 	"github.com/sirupsen/logrus"
 )
@@ -13,10 +16,10 @@ import (
 var DefaultKey = "peerjs"
 
 var socketEvents = []string{
-	SocketEventTypeMessage,
-	SocketEventTypeError,
-	SocketEventTypeDisconnected,
-	SocketEventTypeClose,
+	enums.SocketEventTypeMessage,
+	enums.SocketEventTypeError,
+	enums.SocketEventTypeDisconnected,
+	enums.SocketEventTypeClose,
 }
 
 type socketEventWrapper struct {
@@ -27,11 +30,11 @@ type socketEventWrapper struct {
 //NewPeer initializes a new Peer object
 func NewPeer(id string, opts Options) (*Peer, error) {
 	p := &Peer{
-		Emitter:      NewEmitter(),
+		Emitter:      emitter.NewEmitter(),
 		opts:         opts,
 		api:          NewAPI(opts),
 		socket:       NewSocket(opts),
-		lostMessages: make(map[string][]Message),
+		lostMessages: make(map[string][]models.Message),
 		connections:  make(map[string]map[string]Connection),
 	}
 
@@ -53,12 +56,9 @@ func NewPeer(id string, opts Options) (*Peer, error) {
 	return p, nil
 }
 
-//EventHandler wrap an event callback
-type EventHandler func(interface{})
-
 //Peer expose the PeerJS API
 type Peer struct {
-	Emitter
+	emitter.Emitter
 	ID           string
 	opts         Options
 	connections  map[string]map[string]Connection
@@ -69,7 +69,7 @@ type Peer struct {
 	destroyed    bool
 	disconnected bool
 	lastServerID string
-	lostMessages map[string][]Message
+	lostMessages map[string][]models.Message
 }
 
 //GetSocket return a socket connection
@@ -121,22 +121,22 @@ func (p *Peer) messageHandler(msg SocketEvent) {
 	peerID := msg.Message.GetSrc()
 	payload := msg.Message.GetPayload()
 	switch msg.Message.GetType() {
-	case ServerMessageTypeOpen:
+	case enums.ServerMessageTypeOpen:
 		p.lastServerID = p.ID
 		p.open = true
 		p.log.Debugf("Open session with id=%s", p.ID)
-		p.Emit(PeerEventTypeOpen, p.ID)
+		p.Emit(enums.PeerEventTypeOpen, p.ID)
 		break
-	case ServerMessageTypeError:
-		p.abort(PeerErrorTypeServerError, msg.Error)
+	case enums.ServerMessageTypeError:
+		p.abort(enums.PeerErrorTypeServerError, msg.Error)
 		break
-	case ServerMessageTypeIDTaken: // The selected ID is taken.
-		p.abort(PeerErrorTypeUnavailableID, fmt.Errorf("ID %s is taken", p.ID))
+	case enums.ServerMessageTypeIDTaken: // The selected ID is taken.
+		p.abort(enums.PeerErrorTypeUnavailableID, fmt.Errorf("ID %s is taken", p.ID))
 		break
-	case ServerMessageTypeInvalidKey: // The given API key cannot be found.
-		p.abort(PeerErrorTypeInvalidKey, fmt.Errorf("API KEY %s is invalid", p.opts.Key))
+	case enums.ServerMessageTypeInvalidKey: // The given API key cannot be found.
+		p.abort(enums.PeerErrorTypeInvalidKey, fmt.Errorf("API KEY %s is invalid", p.opts.Key))
 		break
-	case ServerMessageTypeLeave: // Another peer has closed its connection to this peer.
+	case enums.ServerMessageTypeLeave: // Another peer has closed its connection to this peer.
 		peerID := msg.Message.GetSrc()
 		p.log.Debugf("Received leave message from %s", peerID)
 		p.cleanupPeer(peerID)
@@ -144,10 +144,10 @@ func (p *Peer) messageHandler(msg SocketEvent) {
 			delete(p.connections, peerID)
 		}
 		break
-	case ServerMessageTypeExpire: // The offer sent to a peer has expired without response.
-		p.EmitError(PeerErrorTypePeerUnavailable, fmt.Errorf("Could not connect to peer %s", peerID))
+	case enums.ServerMessageTypeExpire: // The offer sent to a peer has expired without response.
+		p.EmitError(enums.PeerErrorTypePeerUnavailable, fmt.Errorf("Could not connect to peer %s", peerID))
 		break
-	case ServerMessageTypeOffer:
+	case enums.ServerMessageTypeOffer:
 
 		// we should consider switching this to CALL/CONNECT, but this is the least breaking option.
 		connectionID := payload.ConnectionID
@@ -160,7 +160,7 @@ func (p *Peer) messageHandler(msg SocketEvent) {
 
 		var err error
 		// Create a new connection.
-		if payload.Type == ConnectionTypeMedia {
+		if payload.Type == enums.ConnectionTypeMedia {
 			connection, err = NewMediaConnection(peerID, p, ConnectionOptions{
 				ConnectionID: connectionID,
 				Payload:      payload,
@@ -171,8 +171,8 @@ func (p *Peer) messageHandler(msg SocketEvent) {
 				return
 			}
 			p.AddConnection(peerID, connection)
-			p.Emit(PeerEventTypeCall, connection)
-		} else if payload.Type == ConnectionTypeData {
+			p.Emit(enums.PeerEventTypeCall, connection)
+		} else if payload.Type == enums.ConnectionTypeData {
 			connection, err = NewDataConnection(peerID, p, ConnectionOptions{
 				ConnectionID:  connectionID,
 				Payload:       payload,
@@ -187,7 +187,7 @@ func (p *Peer) messageHandler(msg SocketEvent) {
 				return
 			}
 			p.AddConnection(peerID, connection)
-			p.Emit(PeerEventTypeConnection, connection)
+			p.Emit(enums.PeerEventTypeConnection, connection)
 		} else {
 			p.log.Warnf(`Received malformed connection type:%s`, payload.Type)
 			return
@@ -227,24 +227,24 @@ func (p *Peer) messageHandler(msg SocketEvent) {
 func (p *Peer) socketEventHandler(data interface{}) {
 	ev := data.(SocketEvent)
 	switch ev.Type {
-	case SocketEventTypeMessage:
+	case enums.SocketEventTypeMessage:
 		p.messageHandler(ev)
 		break
-	case SocketEventTypeError:
-		p.abort(PeerErrorTypeSocketError, ev.Error)
+	case enums.SocketEventTypeError:
+		p.abort(enums.PeerErrorTypeSocketError, ev.Error)
 		break
-	case SocketEventTypeDisconnected:
+	case enums.SocketEventTypeDisconnected:
 		if p.disconnected {
 			return
 		}
-		p.EmitError(PeerErrorTypeNetwork, errors.New("Lost connection to server"))
+		p.EmitError(enums.PeerErrorTypeNetwork, errors.New("Lost connection to server"))
 		p.disconnect()
 		break
-	case SocketEventTypeClose:
+	case enums.SocketEventTypeClose:
 		if p.disconnected {
 			return
 		}
-		p.abort(PeerErrorTypeSocketClosed, errors.New("Underlying socket is already closed"))
+		p.abort(enums.PeerErrorTypeSocketClosed, errors.New("Underlying socket is already closed"))
 		break
 	}
 }
@@ -262,20 +262,20 @@ func (p *Peer) registerSocketHandlers() {
 }
 
 // Stores messages without a set up connection, to be claimed later
-func (p *Peer) storeMessage(connectionID string, message Message) {
+func (p *Peer) storeMessage(connectionID string, message models.Message) {
 	if _, ok := p.lostMessages[connectionID]; !ok {
-		p.lostMessages[connectionID] = []Message{}
+		p.lostMessages[connectionID] = []models.Message{}
 	}
 	p.lostMessages[connectionID] = append(p.lostMessages[connectionID], message)
 }
 
 //GetMessages Retrieve messages from lost message store
-func (p *Peer) GetMessages(connectionID string) []Message {
+func (p *Peer) GetMessages(connectionID string) []models.Message {
 	if messages, ok := p.lostMessages[connectionID]; ok {
 		delete(p.lostMessages, connectionID)
 		return messages
 	}
-	return []Message{}
+	return []models.Message{}
 }
 
 //Close closes the peer instance
@@ -302,7 +302,7 @@ func (p *Peer) Connect(peerID string, opts *ConnectionOptions) (*DataConnection,
 	  or call reconnect on this peer if you believe its ID to still be available`)
 		err := errors.New("Cannot connect to new Peer after disconnecting from server")
 		p.EmitError(
-			PeerErrorTypeDisconnected,
+			enums.PeerErrorTypeDisconnected,
 			err,
 		)
 		return nil, err
@@ -336,7 +336,7 @@ func (p *Peer) Call(peerID string, track webrtc.TrackLocal, opts *ConnectionOpti
 		p.log.Warn("You cannot connect to a new Peer because you called .disconnect() on this Peer and ended your connection with the server. You can create a new Peer to reconnect")
 		err := errors.New("Cannot connect to new Peer after disconnecting from server")
 		p.EmitError(
-			PeerErrorTypeDisconnected,
+			enums.PeerErrorTypeDisconnected,
 			err,
 		)
 		return nil, err
@@ -369,7 +369,7 @@ func (p *Peer) abort(errType string, err error) error {
 //EmitError emits an error
 func (p *Peer) EmitError(errType string, err error) {
 	p.log.Errorf("Error: %s", err)
-	p.Emit(PeerEventTypeError, err)
+	p.Emit(enums.PeerEventTypeError, err)
 }
 
 func (p *Peer) initialize(id string) error {
@@ -397,7 +397,7 @@ func (p *Peer) destroy() {
 
 	p.destroyed = true
 
-	p.Emit(PeerEventTypeClose, nil)
+	p.Emit(enums.PeerEventTypeClose, nil)
 }
 
 // cleanup Disconnects every connection on this peer.
@@ -448,7 +448,7 @@ func (p *Peer) disconnect() {
 	p.lastServerID = currentID
 	p.ID = ""
 
-	p.Emit(PeerEventTypeDisconnected, currentID)
+	p.Emit(enums.PeerEventTypeDisconnected, currentID)
 }
 
 // reconnect Attempts to reconnect with the same ID
@@ -483,12 +483,12 @@ func (p *Peer) ListAllPeers() ([]string, error) {
 	peers := []string{}
 	raw, err := p.api.ListAllPeers()
 	if err != nil {
-		return peers, p.abort(PeerErrorTypeServerError, err)
+		return peers, p.abort(enums.PeerErrorTypeServerError, err)
 	}
 
 	err = json.Unmarshal(raw, &peers)
 	if err != nil {
-		return peers, p.abort(PeerErrorTypeServerError, err)
+		return peers, p.abort(enums.PeerErrorTypeServerError, err)
 	}
 
 	return peers, nil

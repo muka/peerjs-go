@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/muka/peer/enums"
+	"github.com/muka/peer/models"
 	"github.com/pion/webrtc/v3"
 	"github.com/sirupsen/logrus"
 )
@@ -44,7 +46,7 @@ func (n *Negotiator) StartConnection(opts ConnectionOptions) error {
 	// Set the connection's PC.
 	n.connection.SetPeerConnection(peerConnection)
 
-	if n.connection.GetType() == ConnectionTypeMedia && opts.Stream != nil {
+	if n.connection.GetType() == enums.ConnectionTypeMedia && opts.Stream != nil {
 		for _, track := range opts.Stream.GetTracks() {
 			peerConnection.AddTrack(track.(webrtc.TrackLocal))
 		}
@@ -52,7 +54,7 @@ func (n *Negotiator) StartConnection(opts ConnectionOptions) error {
 
 	// What do we need to do now?
 	if opts.Originator {
-		if n.connection.GetType() == ConnectionTypeData {
+		if n.connection.GetType() == enums.ConnectionTypeData {
 
 			dataConnection := n.connection.(*DataConnection)
 
@@ -71,7 +73,7 @@ func (n *Negotiator) StartConnection(opts ConnectionOptions) error {
 		n.makeOffer()
 	} else {
 		// OFFER
-		err = n.handleSDP(ServerMessageTypeOffer, opts.SDP)
+		err = n.handleSDP(enums.ServerMessageTypeOffer, opts.SDP)
 		if err != nil {
 			return err
 		}
@@ -125,9 +127,9 @@ func (n *Negotiator) setupListeners(peerConnection *webrtc.PeerConnection) {
 
 		n.log.Debugf("Received ICE candidates for %s: %s", peerID, candidate.Candidate)
 
-		msg := Message{
-			Type: ServerMessageTypeCandidate,
-			Payload: Payload{
+		msg := models.Message{
+			Type: enums.ServerMessageTypeCandidate,
+			Payload: models.Payload{
 				Candidate:    &candidate,
 				Type:         connectionType,
 				ConnectionID: connectionID,
@@ -152,14 +154,14 @@ func (n *Negotiator) setupListeners(peerConnection *webrtc.PeerConnection) {
 		case webrtc.ICEConnectionStateFailed:
 			n.log.Debugf("iceConnectionState is failed, closing connections to %s", peerID)
 			n.connection.Emit(
-				ConnectionEventTypeError,
+				enums.ConnectionEventTypeError,
 				fmt.Errorf("Negotiation of connection to %s failed", peerID),
 			)
 			n.connection.Close()
 			break
 		case webrtc.ICEConnectionStateClosed:
 			n.log.Debugf("iceConnectionState is closed, closing connections to %s", peerID)
-			n.connection.Emit(ConnectionEventTypeError, fmt.Errorf("Connection to %s closed", peerID))
+			n.connection.Emit(enums.ConnectionEventTypeError, fmt.Errorf("Connection to %s closed", peerID))
 			n.connection.Close()
 			break
 		case webrtc.ICEConnectionStateDisconnected:
@@ -172,7 +174,7 @@ func (n *Negotiator) setupListeners(peerConnection *webrtc.PeerConnection) {
 			break
 		}
 
-		n.connection.Emit(ConnectionEventTypeIceStateChanged, peerConnection.ICEConnectionState())
+		n.connection.Emit(enums.ConnectionEventTypeIceStateChanged, peerConnection.ICEConnectionState())
 	})
 
 	// DATACONNECTION.
@@ -196,7 +198,7 @@ func (n *Negotiator) setupListeners(peerConnection *webrtc.PeerConnection) {
 
 		connection, ok := provider.GetConnection(peerID, connectionID)
 		if ok {
-			if connection.GetType() == ConnectionTypeMedia {
+			if connection.GetType() == enums.ConnectionTypeMedia {
 				mediaConnection := connection.(*MediaConnection)
 				n.log.Debugf("add stream %s to media connection %s", tr.ID(), mediaConnection.GetID())
 				mediaConnection.AddStream(tr)
@@ -225,7 +227,7 @@ func (n *Negotiator) Cleanup() {
 	peerConnectionNotClosed := peerConnection.ConnectionState() != webrtc.PeerConnectionStateClosed
 	dataChannelNotClosed := false
 
-	if n.connection.GetType() == ConnectionTypeData {
+	if n.connection.GetType() == enums.ConnectionTypeData {
 		dataConnection := n.connection.(*DataConnection)
 		dataChannel := dataConnection.DataChannel
 
@@ -255,7 +257,7 @@ func (n *Negotiator) makeOffer() error {
 	if err != nil {
 		err1 := fmt.Errorf("makeOffer: Failed to create offer: %s", err)
 		n.log.Warn(err1)
-		provider.EmitError(PeerErrorTypeWebRTC, err1)
+		provider.EmitError(enums.PeerErrorTypeWebRTC, err1)
 		return err
 	}
 	n.log.Debug("Created offer")
@@ -270,13 +272,13 @@ func (n *Negotiator) makeOffer() error {
 	if err != nil {
 		err1 := fmt.Errorf("makeOffer: Failed to set local description: %s", err)
 		n.log.Warn(err1)
-		provider.EmitError(PeerErrorTypeWebRTC, err1)
+		provider.EmitError(enums.PeerErrorTypeWebRTC, err1)
 		return err
 	}
 
 	n.log.Debugf("Set localDescription: %s for:%s", offer.SDP, n.connection.GetPeerID())
 
-	payload := Payload{
+	payload := models.Payload{
 		Type:         n.connection.GetType(),
 		ConnectionID: n.connection.GetID(),
 		Metadata:     n.connection.GetMetadata(),
@@ -284,15 +286,15 @@ func (n *Negotiator) makeOffer() error {
 		Browser:      DefaultBrowser,
 	}
 
-	if n.connection.GetType() == ConnectionTypeData {
+	if n.connection.GetType() == enums.ConnectionTypeData {
 		dataConnection := n.connection.(*DataConnection)
 		payload.Label = dataConnection.Label
 		payload.Reliable = dataConnection.Reliable
 		payload.Serialization = dataConnection.Serialization
 	}
 
-	msg := Message{
-		Type:    ServerMessageTypeOffer,
+	msg := models.Message{
+		Type:    enums.ServerMessageTypeOffer,
 		Dst:     n.connection.GetPeerID(),
 		Payload: payload,
 	}
@@ -301,7 +303,7 @@ func (n *Negotiator) makeOffer() error {
 	if err != nil {
 		err1 := fmt.Errorf("makeOffer: Failed to marshal sockt message: %s", err)
 		n.log.Warn(err1)
-		provider.EmitError(PeerErrorTypeWebRTC, err1)
+		provider.EmitError(enums.PeerErrorTypeWebRTC, err1)
 		return err
 	}
 
@@ -309,7 +311,7 @@ func (n *Negotiator) makeOffer() error {
 	if err != nil {
 		err1 := fmt.Errorf("makeOffer: Failed to send message: %s", err)
 		n.log.Warn(err1)
-		provider.EmitError(PeerErrorTypeWebRTC, err1)
+		provider.EmitError(enums.PeerErrorTypeWebRTC, err1)
 		return err
 	}
 
@@ -329,7 +331,7 @@ func (n *Negotiator) makeAnswer() error {
 	if err != nil {
 		err1 := fmt.Errorf("makeAnswer: Failed to create answer: %s", err)
 		n.log.Warn(err1)
-		provider.EmitError(PeerErrorTypeWebRTC, err1)
+		provider.EmitError(enums.PeerErrorTypeWebRTC, err1)
 		return err
 	}
 
@@ -344,16 +346,16 @@ func (n *Negotiator) makeAnswer() error {
 	if err != nil {
 		err1 := fmt.Errorf("makeAnswer: Failed to set local description: %s", err)
 		n.log.Warn(err1)
-		provider.EmitError(PeerErrorTypeWebRTC, err1)
+		provider.EmitError(enums.PeerErrorTypeWebRTC, err1)
 		return err
 	}
 
 	n.log.Debugf(`Set localDescription: %s for %s`, answer.SDP, n.connection.GetPeerID())
 
-	msg := Message{
-		Type: ServerMessageTypeAnswer,
+	msg := models.Message{
+		Type: enums.ServerMessageTypeAnswer,
 		Dst:  n.connection.GetPeerID(),
-		Payload: Payload{
+		Payload: models.Payload{
 			Type:         n.connection.GetType(),
 			ConnectionID: n.connection.GetID(),
 			SDP:          &answer,
@@ -365,7 +367,7 @@ func (n *Negotiator) makeAnswer() error {
 	if err != nil {
 		err1 := fmt.Errorf("makeAnswer: Failed to marshal sockt message: %s", err)
 		n.log.Warn(err1)
-		provider.EmitError(PeerErrorTypeWebRTC, err1)
+		provider.EmitError(enums.PeerErrorTypeWebRTC, err1)
 		return err
 	}
 
@@ -373,7 +375,7 @@ func (n *Negotiator) makeAnswer() error {
 	if err != nil {
 		err1 := fmt.Errorf("makeAnswer: Failed to send message: %s", err)
 		n.log.Warn(err1)
-		provider.EmitError(PeerErrorTypeWebRTC, err1)
+		provider.EmitError(enums.PeerErrorTypeWebRTC, err1)
 		return err
 	}
 
@@ -390,7 +392,7 @@ func (n *Negotiator) handleSDP(sdpType string, sdp webrtc.SessionDescription) er
 
 	err := peerConnection.SetRemoteDescription(sdp)
 	if err != nil {
-		provider.EmitError(PeerErrorTypeWebRTC, err)
+		provider.EmitError(enums.PeerErrorTypeWebRTC, err)
 		n.log.Warnf("handleSDP: Failed to setRemoteDescription %s", err)
 		return err
 	}
@@ -398,7 +400,7 @@ func (n *Negotiator) handleSDP(sdpType string, sdp webrtc.SessionDescription) er
 	n.log.Debugf(`Set remoteDescription:%s for:%s`, sdpType, n.connection.GetPeerID())
 
 	// sdpType == OFFER
-	if sdpType == ServerMessageTypeOffer {
+	if sdpType == enums.ServerMessageTypeOffer {
 		err := n.makeAnswer()
 		if err != nil {
 			return err
@@ -422,7 +424,7 @@ func (n *Negotiator) HandleCandidate(iceInit *webrtc.ICECandidateInit) error {
 
 	err := peerConnection.AddICECandidate(*iceInit)
 	if err != nil {
-		provider.EmitError(PeerErrorTypeWebRTC, err)
+		provider.EmitError(enums.PeerErrorTypeWebRTC, err)
 		n.log.Errorf("handleCandidate: %s", err)
 		return err
 	}

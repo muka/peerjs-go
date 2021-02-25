@@ -3,6 +3,8 @@ package peer
 import (
 	"fmt"
 
+	"github.com/muka/peer/enums"
+	"github.com/muka/peer/models"
 	"github.com/pion/webrtc/v3"
 	"github.com/rs/xid"
 )
@@ -14,7 +16,7 @@ const MediaChannelIDPrefix = "mc_"
 func NewMediaConnection(id string, peer *Peer, opts ConnectionOptions) (*MediaConnection, error) {
 
 	m := &MediaConnection{
-		BaseConnection: newBaseConnection(ConnectionTypeMedia, peer, opts),
+		BaseConnection: newBaseConnection(enums.ConnectionTypeMedia, peer, opts),
 	}
 
 	m.peerID = id
@@ -58,19 +60,19 @@ func (m *MediaConnection) GetRemoteStream() *MediaStream {
 func (m *MediaConnection) AddStream(tr *webrtc.TrackRemote) {
 	m.log.Debugf("Receiving stream: %v", tr)
 	m.remoteStream = NewMediaStreamWithTrack([]MediaStreamTrack{tr})
-	m.Emit(ConnectionEventTypeStream, tr)
+	m.Emit(enums.ConnectionEventTypeStream, tr)
 }
 
-func (m *MediaConnection) handleMessage(message Message) {
+func (m *MediaConnection) handleMessage(message models.Message) {
 	mtype := message.GetType()
 	payload := message.GetPayload()
 	switch message.GetType() {
-	case ServerMessageTypeAnswer:
+	case enums.ServerMessageTypeAnswer:
 		// Forward to negotiator
 		m.negotiator.handleSDP(message.GetType(), *payload.SDP)
 		m.open = true
 		break
-	case ServerMessageTypeCandidate:
+	case enums.ServerMessageTypeCandidate:
 		m.negotiator.HandleCandidate(payload.Candidate)
 		break
 	default:
@@ -132,6 +134,6 @@ func (m *MediaConnection) Close() error {
 
 	m.open = false
 
-	m.Emit(ConnectionEventTypeClose, nil)
+	m.Emit(enums.ConnectionEventTypeClose, nil)
 	return nil
 }

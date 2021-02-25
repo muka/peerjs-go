@@ -3,15 +3,15 @@ package server
 import (
 	"errors"
 
-	"github.com/muka/peer"
+	"github.com/muka/peer/models"
 )
 
 //NewTransmissionHandler handles transmission of messages
-func NewTransmissionHandler(realm IRealm, opts Options) func(client IClient, message peer.IMessage) bool {
+func NewTransmissionHandler(realm IRealm, opts Options) func(client IClient, message models.IMessage) bool {
 
-	var handle func(client IClient, message peer.IMessage) bool
+	var handle func(client IClient, message models.IMessage) bool
 
-	handle = func(client IClient, message peer.IMessage) bool {
+	handle = func(client IClient, message models.IMessage) bool {
 
 		log := createLogger("client:"+client.GetID(), opts)
 
@@ -42,7 +42,7 @@ func NewTransmissionHandler(realm IRealm, opts Options) func(client IClient, mes
 					realm.RemoveClientByID(destinationClient.GetID())
 				}
 
-				handle(client, peer.Message{
+				handle(client, models.Message{
 					Type: MessageTypeLeave,
 					Src:  dstID,
 					Dst:  srcID,

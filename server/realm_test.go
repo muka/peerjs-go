@@ -3,7 +3,7 @@ package server
 import (
 	"testing"
 
-	"github.com/muka/peer"
+	"github.com/muka/peer/models"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -21,7 +21,7 @@ func TestRealmMessage(t *testing.T) {
 	r := NewRealm()
 	c0 := NewClient("1", "a")
 	r.SetClient(c0, c0.GetID())
-	m0 := peer.Message{}
+	m0 := models.Message{}
 	r.AddMessageToQueue("1", m0)
 	c1 := r.GetClientByID("1")
 	assert.Equal(t, c0, c1)
@@ -36,7 +36,7 @@ func TestRealmQueueByID(t *testing.T) {
 	r := NewRealm()
 	c0 := NewClient("1", "a")
 	r.SetClient(c0, c0.GetID())
-	m0 := peer.Message{}
+	m0 := models.Message{}
 	r.AddMessageToQueue("1", m0)
 
 	c1 := r.GetClientsIds()
@@ -52,7 +52,7 @@ func TestRealmQueueByID(t *testing.T) {
 	q = r.GetMessageQueueByID("1")
 	assert.Nil(t, q)
 
-	m1 := peer.Message{}
+	m1 := models.Message{}
 	r.AddMessageToQueue("1", m1)
 	q = r.GetMessageQueueByID("1")
 	assert.NotNil(t, q)

@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/muka/peer"
+	"github.com/muka/peer/models"
 	"github.com/sirupsen/logrus"
 )
 
@@ -93,14 +93,14 @@ func (h *HTTPServer) handler() http.HandlerFunc {
 			return
 		}
 
-		payload := new(peer.Message)
+		payload := new(models.Message)
 		err = json.Unmarshal(body, payload)
 		if err != nil {
 			http.Error(w, "Failed to decode message", http.StatusInternalServerError)
 			return
 		}
 
-		message := peer.Message{
+		message := models.Message{
 			Type:    payload.Type,
 			Src:     id,
 			Dst:     payload.Dst,

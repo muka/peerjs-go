@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/muka/peer/server"
 	"github.com/pion/webrtc/v3"
 	"github.com/rs/xid"
 	"github.com/stretchr/testify/assert"
@@ -16,32 +17,49 @@ func rndName(name string) string {
 	return fmt.Sprintf("%s_%s", name, xid.New().String())
 }
 
-func getTestOpts() Options {
+func getTestOpts(serverOpts server.Options) Options {
 	opts := NewOptions()
-	opts.Path = "/myapp"
-	opts.Host = "localhost"
-	opts.Port = 9000
+	opts.Path = serverOpts.Path
+	opts.Host = serverOpts.Host
+	opts.Port = serverOpts.Port
 	opts.Secure = false
 	opts.Debug = 0
 	return opts
 }
 
+func startServer() (*server.PeerServer, server.Options) {
+	opts := server.NewOptions()
+	opts.Port = 9000
+	opts.Host = "localhost"
+	opts.Path = "/myapp"
+	return server.New(opts), opts
+}
+
 func TestNewPeer(t *testing.T) {
-	p, err := NewPeer("test", getTestOpts())
+	peerServer, serverOpts := startServer()
+	peerServer.Start()
+	defer peerServer.Stop()
+	p, err := NewPeer("test", getTestOpts(serverOpts))
 	assert.NoError(t, err)
 	assert.NotEmpty(t, p.ID)
 	p.Close()
 }
 
 func TestNewPeerRandomID(t *testing.T) {
-	p, err := NewPeer("", getTestOpts())
+	peerServer, serverOpts := startServer()
+	peerServer.Start()
+	defer peerServer.Stop()
+	p, err := NewPeer("", getTestOpts(serverOpts))
 	assert.NoError(t, err)
 	assert.NotEmpty(t, p.ID)
 	p.Close()
 }
 
 func TestNewPeerEvents(t *testing.T) {
-	p, err := NewPeer(rndName("test"), getTestOpts())
+	peerServer, serverOpts := startServer()
+	peerServer.Start()
+	defer peerServer.Stop()
+	p, err := NewPeer(rndName("test"), getTestOpts(serverOpts))
 	// done := false
 	// p.On(PeerEventTypeOpen, func(data interface{}) {
 	// 	done = true
@@ -59,11 +77,15 @@ func TestDuplicatedID(t *testing.T) {
 	peer1Name := rndName("duplicated")
 	peer2Name := peer1Name
 
-	peer1, err := NewPeer(peer1Name, getTestOpts())
+	peerServer, serverOpts := startServer()
+	peerServer.Start()
+	defer peerServer.Stop()
+
+	peer1, err := NewPeer(peer1Name, getTestOpts(serverOpts))
 	assert.NoError(t, err)
 	defer peer1.Close()
 
-	peer2, err := NewPeer(peer2Name, getTestOpts())
+	peer2, err := NewPeer(peer2Name, getTestOpts(serverOpts))
 	assert.NoError(t, err)
 	defer peer2.Close()
 
@@ -85,11 +107,15 @@ func TestHelloWorld(t *testing.T) {
 	peer1Name := rndName("peer1")
 	peer2Name := rndName("peer2")
 
-	peer1, err := NewPeer(peer1Name, getTestOpts())
+	peerServer, serverOpts := startServer()
+	peerServer.Start()
+	defer peerServer.Stop()
+
+	peer1, err := NewPeer(peer1Name, getTestOpts(serverOpts))
 	assert.NoError(t, err)
 	defer peer1.Close()
 
-	peer2, err := NewPeer(peer2Name, getTestOpts())
+	peer2, err := NewPeer(peer2Name, getTestOpts(serverOpts))
 	assert.NoError(t, err)
 	defer peer2.Close()
 
@@ -122,11 +148,15 @@ func TestLongPayload(t *testing.T) {
 	peer1Name := rndName("peer1")
 	peer2Name := rndName("peer2")
 
-	peer1, err := NewPeer(peer1Name, getTestOpts())
+	peerServer, serverOpts := startServer()
+	peerServer.Start()
+	defer peerServer.Stop()
+
+	peer1, err := NewPeer(peer1Name, getTestOpts(serverOpts))
 	assert.NoError(t, err)
 	defer peer1.Close()
 
-	peer2, err := NewPeer(peer2Name, getTestOpts())
+	peer2, err := NewPeer(peer2Name, getTestOpts(serverOpts))
 	assert.NoError(t, err)
 	defer peer2.Close()
 
@@ -164,11 +194,15 @@ func TestMediaCall(t *testing.T) {
 	peer1Name := rndName("peer1")
 	peer2Name := rndName("peer2")
 
-	peer1, err := NewPeer(peer1Name, getTestOpts())
+	peerServer, serverOpts := startServer()
+	peerServer.Start()
+	defer peerServer.Stop()
+
+	peer1, err := NewPeer(peer1Name, getTestOpts(serverOpts))
 	assert.NoError(t, err)
 	defer peer1.Close()
 
-	peer2, err := NewPeer(peer2Name, getTestOpts())
+	peer2, err := NewPeer(peer2Name, getTestOpts(serverOpts))
 	assert.NoError(t, err)
 	defer peer2.Close()
 

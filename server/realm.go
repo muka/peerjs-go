@@ -3,7 +3,7 @@ package server
 import (
 	"sync"
 
-	"github.com/muka/peer"
+	"github.com/muka/peer/models"
 	"github.com/rs/xid"
 )
 
@@ -31,7 +31,7 @@ type IRealm interface {
 	SetClient(client IClient, id string)
 	RemoveClientByID(id string) bool
 	GetMessageQueueByID(id string) IMessageQueue
-	AddMessageToQueue(id string, message peer.IMessage)
+	AddMessageToQueue(id string, message models.IMessage)
 	ClearMessageQueue(id string)
 	GenerateClientID() string
 }
@@ -100,7 +100,7 @@ func (r *Realm) GetMessageQueueByID(id string) IMessageQueue {
 }
 
 // AddMessageToQueue add message to queue
-func (r *Realm) AddMessageToQueue(id string, message peer.IMessage) {
+func (r *Realm) AddMessageToQueue(id string, message models.IMessage) {
 	if r.GetMessageQueueByID(id) == nil {
 		r.mMutex.Lock()
 		r.messageQueues[id] = NewMessageQueue()

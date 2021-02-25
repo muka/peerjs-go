@@ -1,8 +1,11 @@
-package peer
+package emitter
 
 import (
 	"github.com/chuckpreslar/emission"
 )
+
+//EventHandler wrap an event callback
+type EventHandler func(interface{})
 
 // NewEmitter initializes an Emitter
 func NewEmitter() Emitter {

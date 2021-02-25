@@ -1,14 +1,16 @@
 package server
 
-import "github.com/muka/peer"
+import (
+	"github.com/muka/peer/models"
+)
 
 //Handler wrap a callback
-type Handler func(client IClient, message peer.IMessage) bool
+type Handler func(client IClient, message models.IMessage) bool
 
 // IHandlersRegistry interface for HandlersRegistry
 type IHandlersRegistry interface {
 	RegisterHandler(messageType string, handler Handler)
-	Handle(client IClient, message peer.IMessage) bool
+	Handle(client IClient, message models.IMessage) bool
 }
 
 //NewHandlersRegistry creates a new HandlersRegistry
@@ -33,7 +35,7 @@ func (r *HandlersRegistry) RegisterHandler(messageType string, handler Handler) 
 }
 
 //Handle handles a message
-func (r *HandlersRegistry) Handle(client IClient, message peer.IMessage) bool {
+func (r *HandlersRegistry) Handle(client IClient, message models.IMessage) bool {
 	handler, ok := r.handlers[message.GetType()]
 	if !ok {
 		return false
