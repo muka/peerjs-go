@@ -19,6 +19,7 @@ require (
 	github.com/pion/webrtc/v3 v3.0.0-beta.14
 	github.com/rs/xid v1.2.1
 	github.com/sirupsen/logrus v1.7.0
+	github.com/spf13/viper v1.7.1
 	github.com/stretchr/testify v1.6.1
 	golang.org/x/crypto v0.0.0-20201203163018-be400aefbc4c // indirect
 	golang.org/x/net v0.0.0-20201202161906-c7110b5ffcbb // indirect

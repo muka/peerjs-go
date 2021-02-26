@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/muka/peer/emitter"
+	"github.com/sirupsen/logrus"
 )
 
 //New creates a new PeerServer
@@ -11,7 +12,7 @@ func New(opts Options) *PeerServer {
 
 	s := new(PeerServer)
 	s.Emitter = emitter.NewEmitter()
-
+	s.log = createLogger("peer", opts)
 	s.realm = NewRealm()
 	s.auth = NewAuth(s.realm, opts)
 	s.wss = NewWebSocketServer(s.realm, opts)
@@ -41,6 +42,7 @@ func New(opts Options) *PeerServer {
 //PeerServer wrap the peer server functionalities
 type PeerServer struct {
 	emitter.Emitter
+	log                    *logrus.Entry
 	http                   *HTTPServer
 	realm                  IRealm
 	auth                   *Auth
@@ -92,6 +94,7 @@ func (p *PeerServer) Stop() error {
 	p.http.Stop()
 	p.messageExpire.Stop()
 	p.checkBrokenConnections.Stop()
+	p.log.Info("Peer server stopped")
 	return nil
 }
 
@@ -107,5 +110,8 @@ func (p *PeerServer) Start() error {
 	}()
 
 	<-time.After(time.Millisecond * 500)
+	if err == nil {
+		p.log.Infof("Peer server started (:%d)", p.http.opts.Port)
+	}
 	return err
 }
