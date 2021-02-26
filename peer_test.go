@@ -37,7 +37,11 @@ func startServer() (*server.PeerServer, server.Options) {
 
 func TestNewPeer(t *testing.T) {
 	peerServer, serverOpts := startServer()
-	peerServer.Start()
+	err := peerServer.Start()
+	if err != nil {
+		t.Logf("Server error: %s", err)
+		t.FailNow()
+	}
 	defer peerServer.Stop()
 	p, err := NewPeer("test", getTestOpts(serverOpts))
 	assert.NoError(t, err)
@@ -47,7 +51,11 @@ func TestNewPeer(t *testing.T) {
 
 func TestNewPeerRandomID(t *testing.T) {
 	peerServer, serverOpts := startServer()
-	peerServer.Start()
+	err := peerServer.Start()
+	if err != nil {
+		t.Logf("Server error: %s", err)
+		t.FailNow()
+	}
 	defer peerServer.Stop()
 	p, err := NewPeer("", getTestOpts(serverOpts))
 	assert.NoError(t, err)
@@ -57,7 +65,11 @@ func TestNewPeerRandomID(t *testing.T) {
 
 func TestNewPeerEvents(t *testing.T) {
 	peerServer, serverOpts := startServer()
-	peerServer.Start()
+	err := peerServer.Start()
+	if err != nil {
+		t.Logf("Server error: %s", err)
+		t.FailNow()
+	}
 	defer peerServer.Stop()
 	p, err := NewPeer(rndName("test"), getTestOpts(serverOpts))
 	// done := false
@@ -75,31 +87,30 @@ func TestNewPeerEvents(t *testing.T) {
 func TestDuplicatedID(t *testing.T) {
 
 	peer1Name := rndName("duplicated")
-	peer2Name := peer1Name
 
 	peerServer, serverOpts := startServer()
-	peerServer.Start()
+	err := peerServer.Start()
+	if err != nil {
+		t.Logf("Server error: %s", err)
+		t.FailNow()
+	}
 	defer peerServer.Stop()
 
 	peer1, err := NewPeer(peer1Name, getTestOpts(serverOpts))
 	assert.NoError(t, err)
 	defer peer1.Close()
 
-	peer2, err := NewPeer(peer2Name, getTestOpts(serverOpts))
+	peer2, err := NewPeer(peer1Name, getTestOpts(serverOpts))
 	assert.NoError(t, err)
 	defer peer2.Close()
-
-	_, err = peer1.Connect(peer2Name, nil)
-	assert.NoError(t, err)
-	_, err = peer2.Connect(peer1Name, nil)
-	assert.NoError(t, err)
 
 	peer2.On("error", func(raw interface{}) {
 		err := raw.(error)
 		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "taken")
 	})
 
-	<-time.After(time.Second * 3)
+	<-time.After(time.Second * 1)
 }
 
 func TestHelloWorld(t *testing.T) {
@@ -108,7 +119,11 @@ func TestHelloWorld(t *testing.T) {
 	peer2Name := rndName("peer2")
 
 	peerServer, serverOpts := startServer()
-	peerServer.Start()
+	err := peerServer.Start()
+	if err != nil {
+		t.Logf("Server error: %s", err)
+		t.FailNow()
+	}
 	defer peerServer.Stop()
 
 	peer1, err := NewPeer(peer1Name, getTestOpts(serverOpts))
@@ -149,7 +164,11 @@ func TestLongPayload(t *testing.T) {
 	peer2Name := rndName("peer2")
 
 	peerServer, serverOpts := startServer()
-	peerServer.Start()
+	err := peerServer.Start()
+	if err != nil {
+		t.Logf("Server error: %s", err)
+		t.FailNow()
+	}
 	defer peerServer.Stop()
 
 	peer1, err := NewPeer(peer1Name, getTestOpts(serverOpts))
@@ -195,7 +214,11 @@ func TestMediaCall(t *testing.T) {
 	peer2Name := rndName("peer2")
 
 	peerServer, serverOpts := startServer()
-	peerServer.Start()
+	err := peerServer.Start()
+	if err != nil {
+		t.Logf("Server error: %s", err)
+		t.FailNow()
+	}
 	defer peerServer.Stop()
 
 	peer1, err := NewPeer(peer1Name, getTestOpts(serverOpts))

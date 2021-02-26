@@ -1,5 +1,8 @@
 
 
+kill-server:
+	kill -9 $(lsof -t -i tcp:9000)
+
 peerjs/interop/js:
 	cd interop/js && npm run serve
 

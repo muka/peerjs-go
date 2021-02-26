@@ -301,7 +301,7 @@ func (n *Negotiator) makeOffer() error {
 
 	raw, err := json.Marshal(msg)
 	if err != nil {
-		err1 := fmt.Errorf("makeOffer: Failed to marshal sockt message: %s", err)
+		err1 := fmt.Errorf("makeOffer: Failed to marshal socket message: %s", err)
 		n.log.Warn(err1)
 		provider.EmitError(enums.PeerErrorTypeWebRTC, err1)
 		return err

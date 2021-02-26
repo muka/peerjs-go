@@ -1,20 +1,19 @@
 # Golang PeerJS 
 
-A Golang implementation of [PeerJS](https://github.com/peers/peerjs)
+A Golang port of [PeerJS](https://github.com/peers/peerjs)
 
-This project is in __early stage development__!
-
-## Implementation notes
+## Implementation
 
 - [X] Datachannel
-- [ ] Mediachannel
-- [ ] Test coverage > 80%
-- [ ] Port event emitter to typed callbacks
+- [X] Mediachannel
+- [X] Test coverage > 80%
+- [X] Signalling server
+- [ ] Interoperability tests
 
 ### Unsupported features
 
-- Payload de/encoding based on [js-binarypack](https://github.com/peers/js-binarypack) is not supported. An incomplete attempt in branch `binarypack`
-- Message chunking (incompletely implemented)
+- Payload de/encoding based on [js-binarypack](https://github.com/peers/js-binarypack) is not supported.
+- Message chunking (should be already done in recent browser versions)
 
 ## Usage example
 

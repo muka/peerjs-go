@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
@@ -190,7 +191,11 @@ func (wss *WebSocketServer) onSocketConnection(conn *websocket.Conn, r *http.Req
 		if err != nil {
 			wss.log.Errorf("[%s] Failed to write message: %s", MessageTypeIDTaken, err)
 		}
-		conn.Close()
+		go func() {
+			// wait for the client to receive the response message
+			<-time.After(time.Millisecond * 100)
+			conn.Close()
+		}()
 		return
 	}
 

@@ -1,6 +1,8 @@
 package server
 
 import (
+	"time"
+
 	"github.com/muka/peer/emitter"
 )
 
@@ -96,15 +98,14 @@ func (p *PeerServer) Stop() error {
 // Start start the peer server
 func (p *PeerServer) Start() error {
 
-	errEv := make(chan error)
-
+	var err error
 	go func() {
-		err := p.http.Start()
+		err = p.http.Start()
 		if err != nil {
-			errEv <- err
+			p.Emit("error", err)
 		}
 	}()
 
-	err := <-errEv
+	<-time.After(time.Millisecond * 500)
 	return err
 }

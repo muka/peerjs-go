@@ -119,19 +119,17 @@ func (s *Socket) Start(id string, token string) error {
 	// collect messages
 	go func() {
 		for {
+
 			if s.conn == nil {
 				return
 			}
 
 			msgType, raw, err := s.conn.ReadMessage()
 			if err != nil {
-				if ce, ok := err.(*websocket.CloseError); ok {
-					switch ce.Code {
-					case websocket.CloseNormalClosure,
-						websocket.CloseGoingAway,
-						websocket.CloseNoStatusReceived:
-						return
-					}
+				// catch close error, avoid panic reading a closed conn
+				if _, ok := err.(*websocket.CloseError); ok {
+					s.log.Debugf("WS conn closed: %s", err)
+					return
 				}
 				s.log.Warnf("WS read error: %s", err)
 				continue
