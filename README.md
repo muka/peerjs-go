@@ -10,11 +10,6 @@ A Golang port of [PeerJS](https://github.com/peers/peerjs)
 - [X] Signalling server
 - [ ] Interoperability tests
 
-### Unsupported features
-
-- Payload de/encoding based on [js-binarypack](https://github.com/peers/js-binarypack) is not supported.
-- Message chunking (should be already done in recent browser versions)
-
 ## Usage example
 
 See [_examples folder](./_examples)
@@ -45,3 +40,12 @@ See [_examples folder](./_examples)
 
 	select{}
 ```
+
+### Peer server
+
+A docker image for the GO based peer server is available at [opny/peer-server](https://hub.docker.com/r/opny/peer-server) built for Raspberry Pi and PCs
+
+### Unsupported features
+
+- Payload de/encoding based on [js-binarypack](https://github.com/peers/js-binarypack) is not supported.
+- Message chunking (should be already done in recent browser versions)
