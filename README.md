@@ -16,10 +16,10 @@ See [_examples folder](./_examples)
 
 ```golang
 
-	peer1, _ := NewPeer("peer1", getTestOpts())
+	peer1, _ := NewPeer("peer1", NewOptions())
 	defer peer1.Close()
 
-	peer2, _ := NewPeer("peer2", getTestOpts())
+	peer2, _ := NewPeer("peer2", NewOptions())
 	defer peer2.Close()
 
 	peer2.On("connection", func(data interface{}) {

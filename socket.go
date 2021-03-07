@@ -128,26 +128,26 @@ func (s *Socket) Start(id string, token string) error {
 			if err != nil {
 				// catch close error, avoid panic reading a closed conn
 				if _, ok := err.(*websocket.CloseError); ok {
-					s.log.Debugf("WS conn closed: %s", err)
+					s.log.Debugf("websocket closed: %s", err)
 					return
 				}
-				s.log.Warnf("WS read error: %s", err)
+				s.log.Warnf("websocket read error: %s", err)
 				continue
 			}
 
-			s.log.Infof("WS recv: %d %s", msgType, raw)
+			s.log.Infof("websocket message: %s", raw)
 
 			if msgType == websocket.TextMessage {
 
 				msg := models.Message{}
 				err = json.Unmarshal(raw, &msg)
 				if err != nil {
-					s.log.Errorf("Failed to decode message=%s %s", string(raw), err)
+					s.log.Errorf("Failed to decode websocket message=%s %s", string(raw), err)
 				}
 
 				s.Emit(enums.SocketEventTypeMessage, SocketEvent{enums.SocketEventTypeMessage, &msg, err})
 			} else {
-				s.log.Warnf("Unmanaged socket WS message type %d", msgType)
+				s.log.Warnf("Unmanaged websocket message type %d", msgType)
 			}
 
 		}
