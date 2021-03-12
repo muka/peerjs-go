@@ -1,10 +1,10 @@
 FROM golang as base
 ARG ARCH=amd64
+ARG ARM=
 ADD ./ /build
 WORKDIR /build
-RUN ARCH=${ARCH} make build
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} GOARM=${ARM} go build -o ./peer-server ./cmd/server/main.go
 
 FROM scratch
-ARG ARCH=amd64
-COPY --from=base /build/build/${ARCH} /${ARCH}
-ENTRYPOINT [ "${ARCH}" ]
+COPY --from=base /build/peer-server /peer-server
+ENTRYPOINT [ "/peer-server" ]

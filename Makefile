@@ -54,9 +54,8 @@ docker/build/arm64:
 	docker build . -t ${IMAGENAME}-arm64 --build-arg ARCH=arm64
 
 docker/build/arm:
-	docker build . -t ${IMAGENAME}-arm6 --build-arg ARCH=arm7
-	docker build . -t ${IMAGENAME}-arm7 --build-arg ARCH=arm6
-
+	docker build . -t ${IMAGENAME}-arm6 --build-arg ARCH=arm --build-arg ARM=7
+	docker build . -t ${IMAGENAME}-arm7 --build-arg ARCH=arm --build-arg ARM=6
 
 docker/push: docker/build docker/push/amd64 docker/push/arm64 docker/push/arm docker/build/manifest
 	docker manifest push ${IMAGENAME}

@@ -130,6 +130,20 @@ func (h *HTTPServer) registerHandlers() error {
 	}
 
 	err = baseRoute.
+		HandleFunc("/", func(rw http.ResponseWriter, r *http.Request) {
+			rw.Header().Add("content-type", "application/json")
+			rw.Write([]byte(`{
+  "name": "PeerJS Server",
+  "description": "A server side element to broker connections between PeerJS clients.",
+  "website": "https://github.com/muka/peerjs-go/tree/main/server"
+}`))
+		}).
+		Methods("GET").GetError()
+	if err != nil {
+		return err
+	}
+
+	err = baseRoute.
 		HandleFunc("/{key}/peers", func(rw http.ResponseWriter, r *http.Request) {
 			if !h.opts.AllowDiscovery {
 				rw.WriteHeader(http.StatusUnauthorized)
