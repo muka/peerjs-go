@@ -9,6 +9,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/muka/peer/models"
+	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -211,9 +212,16 @@ func (h *HTTPServer) Start() error {
 		return err
 	}
 
+	c := cors.New(cors.Options{
+		AllowedOrigins:   []string{"*"},
+		AllowCredentials: true,
+	})
+
+	handler := c.Handler(h.router)
+
 	h.http = &http.Server{
 		Addr:           fmt.Sprintf("%s:%d", h.opts.Host, h.opts.Port),
-		Handler:        h.router,
+		Handler:        handler,
 		ReadTimeout:    10 * time.Second,
 		WriteTimeout:   10 * time.Second,
 		MaxHeaderBytes: 1 << 20,

@@ -17,6 +17,7 @@ require (
 	github.com/pion/rtcp v1.2.6 // indirect
 	github.com/pion/transport v0.12.0 // indirect
 	github.com/pion/webrtc/v3 v3.0.0-beta.14
+	github.com/rs/cors v1.7.0 // indirect
 	github.com/rs/xid v1.2.1
 	github.com/sirupsen/logrus v1.7.0
 	github.com/spf13/viper v1.7.1
