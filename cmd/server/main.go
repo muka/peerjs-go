@@ -22,6 +22,7 @@ func fail(err error, msg string) {
 
 func main() {
 
+	viper.AutomaticEnv()
 	viper.SetConfigName("peer")
 	viper.SetConfigType("yaml")
 	viper.AddConfigPath(".")
