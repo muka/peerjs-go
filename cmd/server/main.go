@@ -23,9 +23,12 @@ func fail(err error, msg string) {
 func main() {
 
 	viper.AutomaticEnv()
+	viper.AutomaticEnv()
+	viper.SetEnvPrefix("peer")
 	viper.SetConfigName("peer")
 	viper.SetConfigType("yaml")
 	viper.AddConfigPath(".")
+
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 			// Config file not found; ignore error if desired

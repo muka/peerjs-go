@@ -77,21 +77,20 @@ func (wss *WebSocketServer) configureWS(conn *websocket.Conn, client IClient) er
 	client.SetSocket(conn)
 	go func() {
 		for {
-
-			messageType, raw, err := conn.ReadMessage()
+			_, raw, err := conn.ReadMessage()
 			if err != nil {
+				// if any close error happens, stop the loop and remove the client
+				if _, ok := err.(*websocket.CloseError); ok {
+					wss.log.Debug("Closed connection, cleaning up %s", client.GetID())
+					if client.GetSocket() == conn {
+						wss.realm.RemoveClientByID(client.GetID())
+					}
+					conn.Close()
+					wss.Emit(WebsocketEventClose, client)
+					break
+				}
 				wss.log.Errorf("[%s] Read WS error: %s", client.GetID(), err)
 				continue
-			}
-
-			// close
-			if messageType == websocket.CloseMessage {
-				if client.GetSocket() == conn {
-					wss.realm.RemoveClientByID(client.GetID())
-				}
-				conn.Close()
-				wss.Emit(WebsocketEventClose, client)
-				return
 			}
 
 			// message handling
@@ -207,29 +206,24 @@ func (wss *WebSocketServer) onSocketConnection(conn *websocket.Conn, r *http.Req
 func (wss *WebSocketServer) Handler() mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+			// check if the request needs upgrade
+			wskey := r.Header.Get("Sec-WebSocket-Key")
+			if wskey == "" {
+				next.ServeHTTP(w, r)
+				return
+			}
+
 			c, err := wss.upgrader.Upgrade(w, r, nil)
 			if err != nil {
 				wss.log.Warnf("upgrade error: %s", err)
-				next.ServeHTTP(w, r)
+				w.WriteHeader(500)
+				// next.ServeHTTP(w, r)
 				return
 			}
 
 			wss.onSocketConnection(c, r)
 
-			// defer c.Close()
-			// for {
-			// 	mt, message, err := c.ReadMessage()
-			// 	if err != nil {
-			// 		wss.log.Warnf("read: %s", err)
-			// 		break
-			// 	}
-			// 	wss.log.Infof("recv: %s", message)
-			// 	err = c.WriteMessage(mt, message)
-			// 	if err != nil {
-			// 		wss.log.Warnf("write: %s", err)
-			// 		break
-			// 	}
-			// }
 		})
 	}
 }

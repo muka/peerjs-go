@@ -117,19 +117,9 @@ func (h *HTTPServer) handler() http.HandlerFunc {
 func (h *HTTPServer) registerHandlers() error {
 
 	baseRoute := h.router.PathPrefix(h.opts.Path).Subrouter()
+	h.log.Debugf("Path prefix: %s", h.opts.Path)
 
-	// public API
 	err := baseRoute.
-		HandleFunc("/{key}/id", func(rw http.ResponseWriter, r *http.Request) {
-			rw.Header().Add("content-type", "text/html")
-			rw.Write([]byte(h.realm.GenerateClientID()))
-		}).
-		Methods("GET").GetError()
-	if err != nil {
-		return err
-	}
-
-	err = baseRoute.
 		HandleFunc("/", func(rw http.ResponseWriter, r *http.Request) {
 			rw.Header().Add("content-type", "application/json")
 			rw.Write([]byte(`{
@@ -137,6 +127,17 @@ func (h *HTTPServer) registerHandlers() error {
   "description": "A server side element to broker connections between PeerJS clients.",
   "website": "https://github.com/muka/peerjs-go/tree/main/server"
 }`))
+		}).
+		Methods("GET").GetError()
+	if err != nil {
+		return err
+	}
+
+	// public API
+	err = baseRoute.
+		HandleFunc("/{key}/id", func(rw http.ResponseWriter, r *http.Request) {
+			rw.Header().Add("content-type", "text/html")
+			rw.Write([]byte(h.realm.GenerateClientID()))
 		}).
 		Methods("GET").GetError()
 	if err != nil {
