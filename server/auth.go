@@ -56,6 +56,12 @@ func (a *Auth) Handler() mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
+			// allow root path to serve generic banner
+			if r.URL.Path == "/" {
+				next.ServeHTTP(w, r)
+				return
+			}
+
 			keys := r.URL.Query()
 
 			key := keys.Get("key")
@@ -65,6 +71,7 @@ func (a *Auth) Handler() mux.MiddlewareFunc {
 			err := a.checkRequest(key, id, token)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusUnauthorized)
+				return
 			}
 
 			next.ServeHTTP(w, r)
