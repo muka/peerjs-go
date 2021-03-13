@@ -75,22 +75,35 @@ func (wss *WebSocketServer) sendErrorAndClose(conn *websocket.Conn, msg string) 
 //
 func (wss *WebSocketServer) configureWS(conn *websocket.Conn, client IClient) error {
 	client.SetSocket(conn)
+
+	conn.SetPingHandler(func(appData string) error {
+		// wss.log.Debugf("[%s] Ping received", client.GetID())
+		client.SetLastPing(getTime())
+		return nil
+	})
+
+	closed := false
+	conn.SetCloseHandler(func(code int, text string) error {
+		// if any close error happens, stop the loop and remove the client
+		wss.log.Debug("Closed connection, cleaning up %s", client.GetID())
+		if client.GetSocket() == conn {
+			wss.realm.RemoveClientByID(client.GetID())
+		}
+		conn.Close()
+		wss.Emit(WebsocketEventClose, client)
+		closed = true
+		return nil
+	})
+
 	go func() {
 		for {
+			if closed {
+				return
+			}
 			_, raw, err := conn.ReadMessage()
 			if err != nil {
-				// if any close error happens, stop the loop and remove the client
-				if _, ok := err.(*websocket.CloseError); ok {
-					wss.log.Debug("Closed connection, cleaning up %s", client.GetID())
-					if client.GetSocket() == conn {
-						wss.realm.RemoveClientByID(client.GetID())
-					}
-					conn.Close()
-					wss.Emit(WebsocketEventClose, client)
-					break
-				}
 				wss.log.Errorf("[%s] Read WS error: %s", client.GetID(), err)
-				continue
+				return
 			}
 
 			// message handling

@@ -2,6 +2,9 @@
 IMAGENAME ?= opny/peer-server
 BUILDPATH ?= ./build
 
+server/run:
+	go run cmd/server/main.go
+
 kill-server:
 	kill -9 $(lsof -t -i tcp:9000)
 

@@ -106,6 +106,7 @@ func (s *Socket) Start(id string, token string) error {
 					return
 				}
 				s.mutex.Lock()
+				// s.log.Debug("Send ping")
 				if err := s.conn.WriteMessage(websocket.PingMessage, []byte{}); err != nil {
 					s.mutex.Unlock()
 					return
