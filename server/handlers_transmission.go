@@ -13,7 +13,12 @@ func NewTransmissionHandler(realm IRealm, opts Options) func(client IClient, mes
 
 	handle = func(client IClient, message models.IMessage) bool {
 
-		log := createLogger("client:"+client.GetID(), opts)
+		clientID := "<no-id>"
+		if client != nil {
+			clientID = client.GetID()
+		}
+
+		log := createLogger("client:"+clientID, opts)
 
 		mtype := message.GetType()
 		srcID := message.GetSrc()

@@ -85,12 +85,12 @@ func (s *Socket) Start(id string, token string) error {
 	}
 	s.conn = c
 
-	// s.conn.SetCloseHandler(func(code int, text string) error {
-	// 	s.log.Debug("Called socket WS close handler")
-	// 	s.disconnected = true
-	// 	s.Emit(SocketEventTypeDisconnected, SocketEvent{SocketEventTypeDisconnected, nil, nil})
-	// 	return nil
-	// })
+	s.conn.SetCloseHandler(func(code int, text string) error {
+		s.log.Debug("WS closed")
+		s.disconnected = true
+		s.conn = nil
+		return nil
+	})
 
 	//  ws ping
 	go func() {
@@ -121,7 +121,7 @@ func (s *Socket) Start(id string, token string) error {
 	go func() {
 		for {
 
-			if s.conn == nil {
+			if s.disconnected || s.conn == nil {
 				return
 			}
 

@@ -17,12 +17,7 @@ func New(opts Options) *PeerServer {
 	s.auth = NewAuth(s.realm, opts)
 	s.wss = NewWebSocketServer(s.realm, opts)
 
-	s.http = NewHTTPServer(s.realm, opts)
-
-	s.http.AddHandlers(
-		s.wss.Handler(),
-		s.auth.Handler(),
-	)
+	s.http = NewHTTPServer(s.realm, s.auth, s.wss, opts)
 
 	s.checkBrokenConnections = NewCheckBrokenConnections(
 		s.realm,

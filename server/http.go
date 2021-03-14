@@ -52,10 +52,12 @@ type HTTPServer struct {
 	router         *mux.Router
 	http           *http.Server
 	handlers       []func(http.HandlerFunc) http.HandlerFunc
+	auth           *Auth
+	wss            *WebSocketServer
 }
 
 // NewHTTPServer init a server
-func NewHTTPServer(realm IRealm, opts Options) *HTTPServer {
+func NewHTTPServer(realm IRealm, auth *Auth, wss *WebSocketServer, opts Options) *HTTPServer {
 
 	r := mux.NewRouter()
 
@@ -67,6 +69,8 @@ func NewHTTPServer(realm IRealm, opts Options) *HTTPServer {
 		// http:           srv,
 		handlers:       []func(http.HandlerFunc) http.HandlerFunc{},
 		messageHandler: NewMessageHandler(realm, nil, opts),
+		auth:           auth,
+		wss:            wss,
 	}
 
 	return s
@@ -115,6 +119,26 @@ func (h *HTTPServer) handler() http.HandlerFunc {
 	})
 }
 
+func (h *HTTPServer) peersHandler() http.HandlerFunc {
+	return func(rw http.ResponseWriter, r *http.Request) {
+		if !h.opts.AllowDiscovery {
+			rw.WriteHeader(http.StatusUnauthorized)
+			rw.Write([]byte{})
+			return
+		}
+
+		rw.Header().Add("content-type", "application/json")
+		raw, err := json.Marshal(h.realm.GetClientsIds())
+		if err != nil {
+			h.log.Warnf("/peers: Marshal error %s", err)
+			rw.WriteHeader(http.StatusInternalServerError)
+			rw.Write([]byte{})
+			return
+		}
+		rw.Write(raw)
+	}
+}
+
 func (h *HTTPServer) registerHandlers() error {
 
 	baseRoute := h.router.PathPrefix(h.opts.Path).Subrouter()
@@ -146,23 +170,8 @@ func (h *HTTPServer) registerHandlers() error {
 	}
 
 	err = baseRoute.
-		HandleFunc("/{key}/peers", func(rw http.ResponseWriter, r *http.Request) {
-			if !h.opts.AllowDiscovery {
-				rw.WriteHeader(http.StatusUnauthorized)
-				rw.Write([]byte{})
-				return
-			}
-
-			rw.Header().Add("content-type", "application/json")
-			raw, err := json.Marshal(h.realm.GetClientsIds())
-			if err != nil {
-				h.log.Warnf("/peers: Marshal error %s", err)
-				rw.WriteHeader(http.StatusInternalServerError)
-				rw.Write([]byte{})
-				return
-			}
-			rw.Write(raw)
-		}).
+		Path("/{key}/peers").
+		Handler(h.auth.HTTPHandler(h.peersHandler())).
 		Methods("GET").GetError()
 	if err != nil {
 		return err
@@ -170,10 +179,8 @@ func (h *HTTPServer) registerHandlers() error {
 
 	// handle WS route
 	err = baseRoute.
-		HandleFunc("/peerjs", func(rw http.ResponseWriter, r *http.Request) {
-			rw.Header().Add("content-type", "text/html")
-			rw.Write([]byte{})
-		}).
+		Path(fmt.Sprintf("/%s", h.opts.Key)).
+		Handler(h.auth.WSHandler(h.wss.Handler())).
 		Methods("GET").GetError()
 	if err != nil {
 		return err
@@ -189,7 +196,8 @@ func (h *HTTPServer) registerHandlers() error {
 	for _, p := range paths {
 		endpoint := fmt.Sprintf("/{key}/{id}/{token}/%s", p)
 		err := baseRoute.
-			HandleFunc(endpoint, h.handler()).
+			Path(endpoint).
+			Handler(h.auth.HTTPHandler(h.handler())).
 			Methods("POST").GetError()
 		if err != nil {
 			return err
@@ -197,11 +205,6 @@ func (h *HTTPServer) registerHandlers() error {
 	}
 
 	return nil
-}
-
-//AddHandlers register HTTP handlers
-func (h *HTTPServer) AddHandlers(middlewares ...mux.MiddlewareFunc) {
-	h.router.Use(middlewares...)
 }
 
 //Start start the HTTP server

@@ -51,30 +51,40 @@ func (a *Auth) checkRequest(key, id, token string) error {
 	return nil
 }
 
-//Handler return a middleware handler
-func (a *Auth) Handler() mux.MiddlewareFunc {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+//WSHandler return a websocket handler middleware
+func (a *Auth) WSHandler(handler http.HandlerFunc) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-			// allow root path to serve generic banner
-			if r.URL.Path == "/" {
-				next.ServeHTTP(w, r)
-				return
-			}
+		// keys := r.URL.Query()
+		// key := keys.Get("key")
+		// id := keys.Get("id")
+		// token := keys.Get("token")
 
-			keys := r.URL.Query()
+		// err := a.checkRequest(key, id, token)
+		// if err != nil {
+		// 	http.Error(w, err.Error(), http.StatusUnauthorized)
+		// 	return
+		// }
 
-			key := keys.Get("key")
-			id := keys.Get("id")
-			token := keys.Get("token")
+		handler(w, r)
+	})
+}
 
-			err := a.checkRequest(key, id, token)
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusUnauthorized)
-				return
-			}
+//HTTPHandler return an HTTP handler middleware
+func (a *Auth) HTTPHandler(handler http.HandlerFunc) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-			next.ServeHTTP(w, r)
-		})
-	}
+		params := mux.Vars(r)
+		key := params["key"]
+		id := params["id"]
+		token := params["token"]
+
+		err := a.checkRequest(key, id, token)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
+
+		handler(w, r)
+	})
 }

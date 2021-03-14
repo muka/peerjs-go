@@ -8,7 +8,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"github.com/muka/peer/emitter"
 	"github.com/muka/peer/models"
@@ -30,6 +29,12 @@ func NewWebSocketServer(realm IRealm, opts Options) *WebSocketServer {
 		realm:    realm,
 		opts:     opts,
 	}
+
+	wss.upgrader.CheckOrigin = func(r *http.Request) bool {
+		// TODO: expose as options
+		return true
+	}
+
 	return &wss
 }
 
@@ -85,7 +90,7 @@ func (wss *WebSocketServer) configureWS(conn *websocket.Conn, client IClient) er
 	closed := false
 	conn.SetCloseHandler(func(code int, text string) error {
 		// if any close error happens, stop the loop and remove the client
-		wss.log.Debug("Closed connection, cleaning up %s", client.GetID())
+		wss.log.Debugf("Closed connection, cleaning up %s", client.GetID())
 		if client.GetSocket() == conn {
 			wss.realm.RemoveClientByID(client.GetID())
 		}
@@ -212,31 +217,19 @@ func (wss *WebSocketServer) onSocketConnection(conn *websocket.Conn, r *http.Req
 	}
 
 	wss.configureWS(conn, client)
-	return
 }
 
 // Handler expose the http handler for websocket
-func (wss *WebSocketServer) Handler() mux.MiddlewareFunc {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func (wss *WebSocketServer) Handler() http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-			// check if the request needs upgrade
-			wskey := r.Header.Get("Sec-WebSocket-Key")
-			if wskey == "" {
-				next.ServeHTTP(w, r)
-				return
-			}
-
-			c, err := wss.upgrader.Upgrade(w, r, nil)
-			if err != nil {
-				wss.log.Warnf("upgrade error: %s", err)
-				w.WriteHeader(500)
-				// next.ServeHTTP(w, r)
-				return
-			}
-
-			wss.onSocketConnection(c, r)
-
-		})
-	}
+		c, err := wss.upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			wss.log.Warnf("upgrade error: %s", err)
+			w.WriteHeader(500)
+			// next.ServeHTTP(w, r)
+			return
+		}
+		wss.onSocketConnection(c, r)
+	})
 }
