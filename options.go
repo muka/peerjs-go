@@ -59,7 +59,7 @@ type Options struct {
 // NewConnectionOptions return a ConnectionOptions with defaults
 func NewConnectionOptions() *ConnectionOptions {
 	return &ConnectionOptions{
-		Serialization: enums.SerializationTypeRaw,
+		Serialization: enums.SerializationTypeBinaryUTF8,
 		Debug:         -1,
 	}
 }
