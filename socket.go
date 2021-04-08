@@ -86,7 +86,7 @@ func (s *Socket) Start(id string, token string) error {
 	s.conn = c
 
 	s.conn.SetCloseHandler(func(code int, text string) error {
-		s.log.Debug("WS closed")
+		// s.log.Debug("WS closed")
 		s.disconnected = true
 		s.conn = nil
 		return nil
@@ -121,11 +121,13 @@ func (s *Socket) Start(id string, token string) error {
 	go func() {
 		for {
 
-			if s.disconnected || s.conn == nil {
+			if s.conn == nil {
+				s.log.Debug("WS connection unset, closing read go routine")
 				return
 			}
 
 			msgType, raw, err := s.conn.ReadMessage()
+			s.log.Debugf("WS msg %v", msgType)
 			if err != nil {
 				// catch close error, avoid panic reading a closed conn
 				if _, ok := err.(*websocket.CloseError); ok {
@@ -173,6 +175,7 @@ func (s *Socket) Close() error {
 	if err != nil {
 		s.log.Warnf("WS close error: %s", err)
 	}
+	s.log.Debug("Closed websocket")
 	s.disconnected = true
 	s.conn = nil
 	return err
