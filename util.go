@@ -1,6 +1,23 @@
 package peer
 
-import "math"
+import (
+	"math"
+	"math/rand"
+	"time"
+)
+
+// Seed personal random source - faster and won't mess with global one
+var tokenRand = rand.New(rand.NewSource(time.Now().UnixNano()))
+
+const tokenChars = "1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+func randomToken() string {
+	b := make([]byte, 11) // PeerJS random tokens are 11 chars long
+	for i := range b {
+		b[i] = tokenChars[tokenRand.Intn(len(tokenChars))]
+	}
+	return string(b)
+}
 
 //ChunckedData wraps a data slice with metadata to assemble back the whole data
 type ChunckedData struct {
