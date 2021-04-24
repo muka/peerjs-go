@@ -59,7 +59,7 @@ type Options struct {
 // NewConnectionOptions return a ConnectionOptions with defaults
 func NewConnectionOptions() *ConnectionOptions {
 	return &ConnectionOptions{
-		Serialization: enums.SerializationTypeBinaryUTF8,
+		Serialization: enums.SerializationTypeRaw,
 		Debug:         -1,
 	}
 }
@@ -74,7 +74,7 @@ type ConnectionOptions struct {
 	Label string
 	// Metadata associated with the connection, passed in by whoever initiated the connection.
 	Metadata interface{}
-	// Serialization Can be binary (default), binary-utf8, json, or none.
+	// Serialization. "raw" is the default. PeerJS supports other options, like encodings for JSON objects, but those aren't supported by this library.
 	Serialization string
 	// Reliable whether the underlying data channels should be reliable (e.g. for large file transfers) or not (e.g. for gaming or streaming). Defaults to false.
 	Reliable bool
