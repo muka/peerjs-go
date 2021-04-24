@@ -3,8 +3,8 @@ package peer
 import (
 	"fmt"
 
-	"github.com/muka/peer/enums"
-	"github.com/muka/peer/models"
+	"github.com/muka/peerjs-go/enums"
+	"github.com/muka/peerjs-go/models"
 	"github.com/pion/webrtc/v3"
 	"github.com/rs/xid"
 )

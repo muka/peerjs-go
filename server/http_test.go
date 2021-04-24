@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/muka/peer/enums"
-	"github.com/muka/peer/models"
+	"github.com/muka/peerjs-go/enums"
+	"github.com/muka/peerjs-go/models"
 	"github.com/stretchr/testify/assert"
 )
 

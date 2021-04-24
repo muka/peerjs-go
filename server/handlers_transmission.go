@@ -3,7 +3,7 @@ package server
 import (
 	"errors"
 
-	"github.com/muka/peer/models"
+	"github.com/muka/peerjs-go/models"
 )
 
 //NewTransmissionHandler handles transmission of messages

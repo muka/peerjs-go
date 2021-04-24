@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/muka/peer/models"
+	"github.com/muka/peerjs-go/models"
 	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
 )
