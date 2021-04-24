@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/muka/peer/emitter"
-	"github.com/muka/peer/enums"
-	"github.com/muka/peer/models"
+	"github.com/muka/peerjs-go/emitter"
+	"github.com/muka/peerjs-go/enums"
+	"github.com/muka/peerjs-go/models"
 	"github.com/pion/webrtc/v3"
 	"github.com/sirupsen/logrus"
 )

@@ -6,7 +6,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/muka/peer/server"
+	"github.com/muka/peerjs-go/server"
 	"github.com/spf13/viper"
 )
 

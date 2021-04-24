@@ -1,9 +1,8 @@
-module github.com/muka/peer
+module github.com/muka/peerjs-go
 
 go 1.15
 
 require (
-	github.com/rs/cors v1.7.0
 	github.com/chuckpreslar/emission v0.0.0-20170206194824-a7ddd980baf9
 	github.com/golang/protobuf v1.4.3 // indirect
 	github.com/google/go-cmp v0.5.4 // indirect
@@ -18,7 +17,7 @@ require (
 	github.com/pion/rtcp v1.2.6 // indirect
 	github.com/pion/transport v0.12.0 // indirect
 	github.com/pion/webrtc/v3 v3.0.0-beta.14
-	
+	github.com/rs/cors v1.7.0
 	github.com/rs/xid v1.2.1
 	github.com/sirupsen/logrus v1.7.0
 	github.com/spf13/viper v1.7.1

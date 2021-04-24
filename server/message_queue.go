@@ -3,7 +3,7 @@ package server
 import (
 	"sync"
 
-	"github.com/muka/peer/models"
+	"github.com/muka/peerjs-go/models"
 )
 
 // NewMessageQueue creates a new MessageQueue

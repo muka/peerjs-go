@@ -3,7 +3,7 @@ package server
 import (
 	"time"
 
-	"github.com/muka/peer/emitter"
+	"github.com/muka/peerjs-go/emitter"
 	"github.com/sirupsen/logrus"
 )
 
