@@ -22,6 +22,12 @@ func NewOptions() Options {
 				{
 					URLs: []string{"stun:stun.l.google.com:19302"},
 				},
+				{
+					URLs:           []string{"turn:0.peerjs.com:3478"},
+					Username:       "peerjs",
+					Credential:     "peerjsp",
+					CredentialType: webrtc.ICECredentialTypePassword,
+				},
 			},
 			SDPSemantics: webrtc.SDPSemanticsUnifiedPlan,
 		},
