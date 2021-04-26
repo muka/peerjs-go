@@ -6,8 +6,8 @@ import (
 
 	"github.com/muka/peerjs-go/enums"
 	"github.com/muka/peerjs-go/models"
+	"github.com/muka/peerjs-go/util"
 	"github.com/pion/webrtc/v3"
-	"github.com/rs/xid"
 )
 
 const (
@@ -32,7 +32,7 @@ func NewDataConnection(peerID string, peer *Peer, opts ConnectionOptions) (*Data
 
 	d.id = opts.ConnectionID
 	if d.id == "" {
-		d.id = DataChannelIDPrefix + xid.New().String()
+		d.id = DataChannelIDPrefix + util.RandomToken()
 	}
 
 	d.Label = opts.Label
@@ -322,7 +322,7 @@ func (d *DataConnection) Send(data []byte, chunked bool) error {
 // func (d *DataConnection) sendChunks(raw []byte) {
 // 	panic("sendChunks: binarypack not implemented, please use SerializationTypeRaw")
 // 	// // this method requires a [binarypack] encoding to work
-// 	// chunks := Chunk(raw)
+// 	// chunks := util.Chunk(raw)
 // 	// d.log.Debugf(`DC#%s Try to send %d chunks...`, d.GetID(), len(chunks))
 // 	// for _, chunk := range chunks {
 // 	// 	d.Send(chunk, true)

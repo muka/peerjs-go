@@ -8,13 +8,13 @@ import (
 	"time"
 
 	"github.com/muka/peerjs-go/server"
+	"github.com/muka/peerjs-go/util"
 	"github.com/pion/webrtc/v3"
-	"github.com/rs/xid"
 	"github.com/stretchr/testify/assert"
 )
 
 func rndName(name string) string {
-	return fmt.Sprintf("%s_%s", name, xid.New().String())
+	return fmt.Sprintf("%s_%s", name, util.RandomToken())
 }
 
 func getTestOpts(serverOpts server.Options) Options {

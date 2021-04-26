@@ -1,4 +1,4 @@
-package peer
+package util
 
 import (
 	"math"
@@ -11,7 +11,7 @@ var tokenRand = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 const tokenChars = "1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
-func randomToken() string {
+func RandomToken() string {
 	b := make([]byte, 11) // PeerJS random tokens are 11 chars long
 	for i := range b {
 		b[i] = tokenChars[tokenRand.Intn(len(tokenChars))]
