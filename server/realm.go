@@ -4,12 +4,12 @@ import (
 	"sync"
 
 	"github.com/muka/peerjs-go/models"
-	"github.com/rs/xid"
+	"github.com/muka/peerjs-go/util"
 )
 
 // ClientIDGenerator default hash generator
 var ClientIDGenerator = func() string {
-	return xid.New().String()
+	return util.RandomToken()
 }
 
 // NewRealm creates a new Realm

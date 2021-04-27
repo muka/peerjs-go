@@ -5,8 +5,8 @@ import (
 
 	"github.com/muka/peerjs-go/enums"
 	"github.com/muka/peerjs-go/models"
+	"github.com/muka/peerjs-go/util"
 	"github.com/pion/webrtc/v3"
-	"github.com/rs/xid"
 )
 
 //MediaChannelIDPrefix the media channel connection id prefix
@@ -23,7 +23,7 @@ func NewMediaConnection(id string, peer *Peer, opts ConnectionOptions) (*MediaCo
 
 	m.id = opts.ConnectionID
 	if m.id == "" {
-		m.id = fmt.Sprintf("%s%s", MediaChannelIDPrefix, xid.New().String())
+		m.id = fmt.Sprintf("%s%s", MediaChannelIDPrefix, util.RandomToken())
 	}
 
 	m.localStream = opts.Stream

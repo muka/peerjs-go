@@ -3,8 +3,8 @@ package peer
 import (
 	"github.com/muka/peerjs-go/enums"
 	"github.com/muka/peerjs-go/models"
+	"github.com/muka/peerjs-go/util"
 	"github.com/pion/webrtc/v3"
-	"github.com/rs/xid"
 )
 
 // NewOptions return Peer options with defaults
@@ -15,7 +15,7 @@ func NewOptions() Options {
 		PingInterval: 1000,
 		Path:         "/",
 		Secure:       true,
-		Token:        xid.New().String(),
+		Token:        util.RandomToken(),
 		Key:          DefaultKey,
 		Configuration: webrtc.Configuration{
 			ICEServers: []webrtc.ICEServer{
