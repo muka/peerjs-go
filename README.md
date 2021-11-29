@@ -1,4 +1,4 @@
-# Golang PeerJS 
+# Golang PeerJS
 
 A Golang port of [PeerJS](https://github.com/peers/peerjs)
 
@@ -16,17 +16,27 @@ See [_examples folder](./_examples)
 
 ```golang
 
-	peer1, _ := NewPeer("peer1", NewOptions())
+package main
+
+import (
+	"log"
+	"time"
+
+	peer "github.com/muka/peerjs-go"
+)
+
+func main() {
+	peer1, _ := peer.NewPeer("peer1", peer.NewOptions())
 	defer peer1.Close()
 
-	peer2, _ := NewPeer("peer2", NewOptions())
+	peer2, _ := peer.NewPeer("peer2", peer.NewOptions())
 	defer peer2.Close()
 
 	peer2.On("connection", func(data interface{}) {
-		conn2 := data.(*DataConnection)
+		conn2 := data.(*peer.DataConnection)
 		conn2.On("data", func(data interface{}) {
 			// Will print 'hi!'
-			log.Printf("Received: %v\n", data)
+			log.Printf("Received: %#v: %s\n", data, data)
 		})
 	})
 
@@ -38,7 +48,8 @@ See [_examples folder](./_examples)
 		}
 	})
 
-	select{}
+	select {}
+}
 ```
 
 ### Peer server
