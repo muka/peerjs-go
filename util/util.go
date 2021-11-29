@@ -9,7 +9,11 @@ import (
 // Seed personal random source - faster and won't mess with global one
 var tokenRand = rand.New(rand.NewSource(time.Now().UnixNano()))
 
-const tokenChars = "1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+const (
+	tokenChars = "1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	// ChunkedMTU payload size for a single message
+	ChunkedMTU = 16300
+)
 
 func RandomToken() string {
 	b := make([]byte, 11) // PeerJS random tokens are 11 chars long
