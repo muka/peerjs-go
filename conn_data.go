@@ -15,8 +15,6 @@ const (
 	DataChannelIDPrefix = "dc_"
 	//MaxBufferedAmount max amount to buffer
 	MaxBufferedAmount = 8 * 1024 * 1024
-	// ChunkedMTU payload size for a single message
-	ChunkedMTU = 16300
 )
 
 // NewDataConnection create new DataConnection
