@@ -104,7 +104,7 @@ func (m *MediaConnection) Answer(tl webrtc.TrackLocal, options *AnswerOption) {
 	messages := m.GetProvider().GetMessages(m.GetID())
 
 	for _, message := range messages {
-		m.handleMessage(message)
+		m.HandleMessage(&message)
 	}
 
 	m.open = true
