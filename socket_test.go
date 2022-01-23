@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/muka/peerjs-go/enums"
+	"github.com/KW-M/peerjs-go/enums"
 	"github.com/stretchr/testify/assert"
 )
 

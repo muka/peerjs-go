@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/muka/peerjs-go/models"
+	"github.com/KW-M/peerjs-go/models"
 	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
 )
@@ -150,7 +150,7 @@ func (h *HTTPServer) registerHandlers() error {
 			rw.Write([]byte(`{
   "name": "PeerJS Server",
   "description": "A server side element to broker connections between PeerJS clients.",
-  "website": "https://github.com/muka/peerjs-go/tree/main/server"
+  "website": "https://github.com/KW-M/peerjs-go/tree/main/server"
 }`))
 		}).
 		Methods("GET").GetError()

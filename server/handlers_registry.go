@@ -1,7 +1,7 @@
 package server
 
 import (
-	"github.com/muka/peerjs-go/models"
+	"github.com/KW-M/peerjs-go/models"
 )
 
 //Handler wrap a callback

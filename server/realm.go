@@ -3,8 +3,8 @@ package server
 import (
 	"sync"
 
-	"github.com/muka/peerjs-go/models"
-	"github.com/muka/peerjs-go/util"
+	"github.com/KW-M/peerjs-go/models"
+	"github.com/KW-M/peerjs-go/util"
 )
 
 // ClientIDGenerator default hash generator

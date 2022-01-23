@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/muka/peerjs-go/server"
-	"github.com/muka/peerjs-go/util"
+	"github.com/KW-M/peerjs-go/server"
+	"github.com/KW-M/peerjs-go/util"
 	"github.com/pion/webrtc/v3"
 	"github.com/stretchr/testify/assert"
 )

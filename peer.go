@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/muka/peerjs-go/emitter"
-	"github.com/muka/peerjs-go/enums"
-	"github.com/muka/peerjs-go/models"
+	"github.com/KW-M/peerjs-go/emitter"
+	"github.com/KW-M/peerjs-go/enums"
+	"github.com/KW-M/peerjs-go/models"
 	"github.com/pion/webrtc/v3"
 	"github.com/sirupsen/logrus"
 )
@@ -297,8 +297,8 @@ func (p *Peer) Connect(peerID string, opts *ConnectionOptions) (*DataConnection,
 
 	if p.disconnected {
 		p.log.Warn(`
-	  You cannot connect to a new Peer because you called .disconnect() on this Peer 
-	  and ended your connection with the server. You can create a new Peer to reconnect, 
+	  You cannot connect to a new Peer because you called .disconnect() on this Peer
+	  and ended your connection with the server. You can create a new Peer to reconnect,
 	  or call reconnect on this peer if you believe its ID to still be available`)
 		err := errors.New("Cannot connect to new Peer after disconnecting from server")
 		p.EmitError(

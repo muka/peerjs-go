@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/muka/peerjs-go/models"
+	"github.com/KW-M/peerjs-go/models"
 	"github.com/sirupsen/logrus"
 )
 

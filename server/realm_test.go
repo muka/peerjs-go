@@ -3,7 +3,7 @@ package server
 import (
 	"testing"
 
-	"github.com/muka/peerjs-go/models"
+	"github.com/KW-M/peerjs-go/models"
 	"github.com/stretchr/testify/assert"
 )
 
