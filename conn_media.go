@@ -63,7 +63,7 @@ func (m *MediaConnection) AddStream(tr *webrtc.TrackRemote) {
 	m.Emit(enums.ConnectionEventTypeStream, tr)
 }
 
-func (m *MediaConnection) handleMessage(message models.Message) {
+func (m *MediaConnection) HandleMessage(message *models.Message) error {
 	mtype := message.GetType()
 	payload := message.GetPayload()
 	switch message.GetType() {
@@ -79,6 +79,7 @@ func (m *MediaConnection) handleMessage(message models.Message) {
 		m.log.Warnf("Unrecognized message type:%s from peer:%s", mtype, m.peerID)
 		break
 	}
+	return nil
 }
 
 //Answer open the media connection with the remote peer
