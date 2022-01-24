@@ -7,10 +7,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gorilla/websocket"
 	"github.com/KW-M/peerjs-go/emitter"
 	"github.com/KW-M/peerjs-go/enums"
 	"github.com/KW-M/peerjs-go/models"
+	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
 )
 
@@ -86,7 +86,7 @@ func (s *Socket) Start(id string, token string) error {
 	s.conn = c
 
 	s.conn.SetCloseHandler(func(code int, text string) error {
-		// s.log.Debug("WS closed")
+		s.log.Debug("WS closed")
 		s.disconnected = true
 		s.conn = nil
 		return nil
@@ -106,7 +106,7 @@ func (s *Socket) Start(id string, token string) error {
 					return
 				}
 				s.mutex.Lock()
-				// s.log.Debug("Send ping")
+				s.log.Debug("Send ping")
 				if err := s.conn.WriteMessage(websocket.PingMessage, []byte{}); err != nil {
 					s.mutex.Unlock()
 					return
