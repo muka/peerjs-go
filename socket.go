@@ -74,7 +74,7 @@ func (s *Socket) scheduleHeartbeat() {
 }
 
 func (s *Socket) sendHeartbeat() {
-	if s.disconnected {
+	if s.conn == nil {
 		s.log.Debug(`Cannot send heartbeat, because socket closed`)
 		return
 	}
@@ -115,7 +115,7 @@ func (s *Socket) Start(id string, token string) error {
 		return err
 	}
 	s.conn = c
-	s.disconnected = false
+	// s.disconnected = false
 
 	s.conn.SetCloseHandler(func(code int, text string) error {
 		s.log.Debug("WS closed")
