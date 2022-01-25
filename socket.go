@@ -88,7 +88,7 @@ func (s *Socket) sendHeartbeat() {
 		s.log.Errorf("sendHeartbeat: Failed to serialize message: %s", err)
 	}
 
-	s.log.Debug("Send heartbeat")
+	// s.log.Debug("Send heartbeat")
 	err = s.Send(res)
 	if err != nil {
 		s.log.Errorf("sendHeartbeat: Failed to send message: %s", err)
@@ -118,7 +118,7 @@ func (s *Socket) Start(id string, token string) error {
 	// s.disconnected = false
 
 	s.conn.SetCloseHandler(func(code int, text string) error {
-		s.log.Debug("WS closed")
+		// s.log.Debug("WS closed")
 		s.disconnected = true
 		s.conn = nil
 		return nil
