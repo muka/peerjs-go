@@ -132,6 +132,8 @@ func (s *Socket) Start(id string, token string) error {
 				// catch close error, avoid panic reading a closed conn
 				if _, ok := err.(*websocket.CloseError); ok {
 					s.log.Debugf("websocket closed: %s", err)
+					s.disconnected = true
+					s.conn = nil
 					return
 				}
 				s.log.Warnf("websocket read error: %s", err)
