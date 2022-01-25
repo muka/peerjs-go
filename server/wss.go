@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/KW-M/peerjs-go/emitter"
-	"github.com/KW-M/peerjs-go/models"
+	"github.com/muka/peerjs-go/emitter"
+	"github.com/muka/peerjs-go/models"
 	"github.com/sirupsen/logrus"
 )
 

@@ -22,7 +22,7 @@ import (
 	"log"
 	"time"
 
-	peer "github.com/KW-M/peerjs-go"
+	peer "github.com/muka/peerjs-go"
 )
 
 func main() {

@@ -1,7 +1,7 @@
 package server
 
 import (
-	"github.com/KW-M/peerjs-go/models"
+	"github.com/muka/peerjs-go/models"
 )
 
 //IMessageHandler interface for MessageHandler

@@ -7,9 +7,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/KW-M/peerjs-go/emitter"
-	"github.com/KW-M/peerjs-go/enums"
-	"github.com/KW-M/peerjs-go/models"
+	"github.com/muka/peerjs-go/emitter"
+	"github.com/muka/peerjs-go/enums"
+	"github.com/muka/peerjs-go/models"
 	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
 )

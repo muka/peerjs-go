@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/KW-M/peerjs-go/enums"
-	"github.com/KW-M/peerjs-go/models"
+	"github.com/muka/peerjs-go/enums"
+	"github.com/muka/peerjs-go/models"
 	"github.com/pion/webrtc/v3"
 	"github.com/sirupsen/logrus"
 )

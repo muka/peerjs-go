@@ -1,4 +1,4 @@
-module github.com/KW-M/peerjs-go
+module github.com/muka/peerjs-go
 
 go 1.15
 

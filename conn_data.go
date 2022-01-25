@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"errors"
 
-	"github.com/KW-M/peerjs-go/enums"
-	"github.com/KW-M/peerjs-go/models"
-	"github.com/KW-M/peerjs-go/util"
+	"github.com/muka/peerjs-go/enums"
+	"github.com/muka/peerjs-go/models"
+	"github.com/muka/peerjs-go/util"
 	"github.com/pion/webrtc/v3"
 )
 
