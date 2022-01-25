@@ -115,7 +115,6 @@ func (s *Socket) Start(id string, token string) error {
 		return err
 	}
 	s.conn = c
-	// s.disconnected = false
 
 	s.conn.SetCloseHandler(func(code int, text string) error {
 		// s.log.Debug("WS closed")
