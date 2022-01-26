@@ -35,7 +35,7 @@ func NewPeer(id string, opts Options) (*Peer, error) {
 		api:          NewAPI(opts),
 		socket:       NewSocket(opts),
 		lostMessages: make(map[string][]models.Message),
-		Connections:  make(map[string]map[string]Connection),
+		connections:  make(map[string]map[string]Connection),
 	}
 
 	if id == "" {
@@ -61,13 +61,13 @@ type Peer struct {
 	emitter.Emitter
 	ID           string
 	opts         Options
-	Connections  map[string]map[string]Connection
+	connections  map[string]map[string]Connection
 	api          API
 	socket       *Socket
 	log          *logrus.Entry
-	Open         bool
-	Destroyed    bool
-	Disconnected bool
+	open         bool
+	destroyed    bool
+	disconnected bool
 	lastServerID string
 	lostMessages map[string][]models.Message
 }
@@ -84,20 +84,20 @@ func (p *Peer) GetOptions() Options {
 
 //AddConnection add the connection to the peer
 func (p *Peer) AddConnection(peerID string, connection Connection) {
-	if _, ok := p.Connections[peerID]; !ok {
-		p.Connections[peerID] = make(map[string]Connection)
+	if _, ok := p.connections[peerID]; !ok {
+		p.connections[peerID] = make(map[string]Connection)
 	}
-	p.Connections[peerID][connection.GetID()] = connection
+	p.connections[peerID][connection.GetID()] = connection
 }
 
 //RemoveConnection removes the connection from the peer
 func (p *Peer) RemoveConnection(connection Connection) {
 	peerID := connection.GetPeerID()
 	id := connection.GetID()
-	if connections, ok := p.Connections[peerID]; ok {
+	if connections, ok := p.connections[peerID]; ok {
 		for id := range connections {
 			if id == connection.GetID() {
-				delete(p.Connections[peerID], id)
+				delete(p.connections[peerID], id)
 			}
 		}
 	}
@@ -109,11 +109,11 @@ func (p *Peer) RemoveConnection(connection Connection) {
 
 //GetConnection return a connection based on peerID and connectionID
 func (p *Peer) GetConnection(peerID string, connectionID string) (Connection, bool) {
-	_, ok := p.Connections[peerID]
+	_, ok := p.connections[peerID]
 	if !ok {
 		return nil, false
 	}
-	conn, ok := p.Connections[peerID][connectionID]
+	conn, ok := p.connections[peerID][connectionID]
 	return conn, ok
 }
 
@@ -123,7 +123,7 @@ func (p *Peer) messageHandler(msg SocketEvent) {
 	switch msg.Message.GetType() {
 	case enums.ServerMessageTypeOpen:
 		p.lastServerID = p.ID
-		p.Open = true
+		p.open = true
 		p.log.Debugf("Open session with id=%s", p.ID)
 		p.Emit(enums.PeerEventTypeOpen, p.ID)
 		break
@@ -140,8 +140,8 @@ func (p *Peer) messageHandler(msg SocketEvent) {
 		peerID := msg.Message.GetSrc()
 		p.log.Debugf("Received leave message from %s", peerID)
 		p.cleanupPeer(peerID)
-		if _, ok := p.Connections[peerID]; ok {
-			delete(p.Connections, peerID)
+		if _, ok := p.connections[peerID]; ok {
+			delete(p.connections, peerID)
 		}
 		break
 	case enums.ServerMessageTypeExpire: // The offer sent to a peer has expired without response.
@@ -234,14 +234,14 @@ func (p *Peer) socketEventHandler(data interface{}) {
 		p.abort(enums.PeerErrorTypeSocketError, ev.Error)
 		break
 	case enums.SocketEventTypeDisconnected:
-		if p.Disconnected {
+		if p.disconnected {
 			return
 		}
 		p.EmitError(enums.PeerErrorTypeNetwork, errors.New("Lost connection to server"))
 		p.disconnect()
 		break
 	case enums.SocketEventTypeClose:
-		if p.Disconnected {
+		if p.disconnected {
 			return
 		}
 		p.abort(enums.PeerErrorTypeSocketClosed, errors.New("Underlying socket is already closed"))
@@ -295,7 +295,7 @@ func (p *Peer) Connect(peerID string, opts *ConnectionOptions) (*DataConnection,
 		opts = NewConnectionOptions()
 	}
 
-	if p.Disconnected {
+	if p.disconnected {
 		p.log.Warn(`
 	  You cannot connect to a new Peer because you called .disconnect() on this Peer
 	  and ended your connection with the server. You can create a new Peer to reconnect,
@@ -332,7 +332,7 @@ func (p *Peer) Call(peerID string, track webrtc.TrackLocal, opts *ConnectionOpti
 		opts = NewConnectionOptions()
 	}
 
-	if p.Disconnected {
+	if p.disconnected {
 		p.log.Warn("You cannot connect to a new Peer because you called .disconnect() on this Peer and ended your connection with the server. You can create a new Peer to reconnect")
 		err := errors.New("Cannot connect to new Peer after disconnecting from server")
 		p.EmitError(
@@ -386,7 +386,7 @@ func (p *Peer) initialize(id string) error {
 // destroyed.
 func (p *Peer) destroy() {
 
-	if p.Destroyed {
+	if p.destroyed {
 		return
 	}
 
@@ -395,16 +395,16 @@ func (p *Peer) destroy() {
 	p.disconnect()
 	p.cleanup()
 
-	p.Destroyed = true
+	p.destroyed = true
 
 	p.Emit(enums.PeerEventTypeClose, nil)
 }
 
 // cleanup Disconnects every connection on this peer.
 func (p *Peer) cleanup() {
-	for peerID := range p.Connections {
+	for peerID := range p.connections {
 		p.cleanupPeer(peerID)
-		delete(p.Connections, peerID)
+		delete(p.connections, peerID)
 	}
 
 	err := p.socket.Close()
@@ -416,7 +416,7 @@ func (p *Peer) cleanup() {
 
 // cleanupPeer Closes all connections to this peer.
 func (p *Peer) cleanupPeer(peerID string) {
-	connections, ok := p.Connections[peerID]
+	connections, ok := p.connections[peerID]
 	if !ok {
 		return
 	}
@@ -430,7 +430,7 @@ func (p *Peer) cleanupPeer(peerID string) {
 // Warning: The peer can no longer create or accept connections after being
 // disconnected. It also cannot reconnect to the server.
 func (p *Peer) disconnect() {
-	if p.Disconnected {
+	if p.disconnected {
 		return
 	}
 
@@ -438,8 +438,8 @@ func (p *Peer) disconnect() {
 
 	p.log.Debugf("Disconnect peer with ID:%s", currentID)
 
-	p.Disconnected = true
-	p.Open = false
+	p.disconnected = true
+	p.open = false
 
 	// remove registered handlers
 	p.unregisterSocketHandlers()
@@ -454,18 +454,18 @@ func (p *Peer) disconnect() {
 // reconnect Attempts to reconnect with the same ID
 func (p *Peer) reconnect() error {
 
-	if p.Disconnected && !p.Destroyed {
+	if p.disconnected && !p.destroyed {
 		p.log.Debugf(`Attempting reconnection to server with ID %s`, p.lastServerID)
-		p.Disconnected = false
+		p.disconnected = false
 		p.initialize(p.lastServerID)
 		return nil
 	}
 
-	if p.Destroyed {
+	if p.destroyed {
 		return errors.New("This peer cannot reconnect to the server. It has already been destroyed")
 	}
 
-	if !p.Disconnected && !p.Open {
+	if !p.disconnected && !p.open {
 		// Do nothing. We're still connecting the first time.
 		p.log.Error("In a hurry? We're still trying to make the initial connection!")
 		return nil
