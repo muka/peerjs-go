@@ -52,9 +52,27 @@ func main() {
 }
 ```
 
+
+Further documentation can be found at: [https://pkg.go.dev/github.com/muka/peerjs-go/](https://pkg.go.dev/github.com/muka/peerjs-go/)
+
 ### Peer server
 
 A docker image for the GO based peer server is available at [opny/peer-server](https://hub.docker.com/r/opny/peer-server) built for Raspberry Pi and PCs
+
+The source of the GO based peer server can be found in the [server folder](./server/) which can be imported as the go package `"github.com/muka/peerjs-go/server"`
+and is documentated on [pkg.go.dev](https://pkg.go.dev/github.com/muka/peerjs-go/server). Also see example usage in the [peer_test.go](peer_test.go) file.
+
+If you want a standalone GO based Peerjs server, run `go build ./cmd/server/main.go` to get an exacutable. To set the server options, create a `peer.yaml` configuration file in the same folder as the executable.
+__Available Server Options:__
+- __Host__ String
+- __Port__ Int
+- __LogLevel__ String
+- __ExpireTimeout__ Int64
+- __AliveTimeout__ Int64
+- __Key__ String
+- __Path__ String
+- __ConcurrentLimit__ Int
+- __AllowDiscovery__ Bool
 
 ### Unsupported features
 

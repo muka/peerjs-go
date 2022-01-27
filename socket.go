@@ -7,10 +7,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gorilla/websocket"
 	"github.com/muka/peerjs-go/emitter"
 	"github.com/muka/peerjs-go/enums"
 	"github.com/muka/peerjs-go/models"
+	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
 )
 
@@ -42,6 +42,7 @@ type Socket struct {
 	conn         *websocket.Conn
 	log          *logrus.Entry
 	mutex        sync.Mutex
+	wsPingTimer  *time.Timer
 }
 
 func (s *Socket) buildBaseURL() string {
@@ -64,6 +65,36 @@ func (s *Socket) buildBaseURL() string {
 		path,
 		s.opts.Key,
 	)
+}
+
+func (s *Socket) scheduleHeartbeat() {
+	s.wsPingTimer = time.AfterFunc(time.Millisecond*time.Duration(s.opts.PingInterval), func() {
+		s.sendHeartbeat()
+	})
+}
+
+func (s *Socket) sendHeartbeat() {
+	if s.conn == nil {
+		s.log.Debug(`Cannot send heartbeat, because socket closed`)
+		return
+	}
+
+	msg := models.Message{
+		Type: enums.ServerMessageTypeHeartbeat,
+	}
+
+	res, err := json.Marshal(msg)
+	if err != nil {
+		s.log.Errorf("sendHeartbeat: Failed to serialize message: %s", err)
+	}
+
+	// s.log.Debug("Send heartbeat")
+	err = s.Send(res)
+	if err != nil {
+		s.log.Errorf("sendHeartbeat: Failed to send message: %s", err)
+	}
+
+	s.scheduleHeartbeat()
 }
 
 //Start initiate the connection
@@ -92,30 +123,8 @@ func (s *Socket) Start(id string, token string) error {
 		return nil
 	})
 
-	//  ws ping
-	go func() {
-		ticker := time.NewTicker(time.Millisecond * time.Duration(s.opts.PingInterval))
-		defer func() {
-			ticker.Stop()
-			s.Close()
-		}()
-		for {
-			select {
-			case <-ticker.C:
-				if s.conn == nil {
-					return
-				}
-				s.mutex.Lock()
-				// s.log.Debug("Send ping")
-				if err := s.conn.WriteMessage(websocket.PingMessage, []byte{}); err != nil {
-					s.mutex.Unlock()
-					return
-				}
-				s.mutex.Unlock()
-				break
-			}
-		}
-	}()
+	// ws ping by sending heartbeat message
+	s.scheduleHeartbeat()
 
 	// collect messages
 	go func() {
@@ -132,6 +141,7 @@ func (s *Socket) Start(id string, token string) error {
 				// catch close error, avoid panic reading a closed conn
 				if _, ok := err.(*websocket.CloseError); ok {
 					s.log.Debugf("websocket closed: %s", err)
+					s.Emit(enums.SocketEventTypeDisconnected, SocketEvent{enums.SocketEventTypeDisconnected, nil, err})
 					return
 				}
 				s.log.Warnf("websocket read error: %s", err)

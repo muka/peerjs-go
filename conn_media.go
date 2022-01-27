@@ -41,7 +41,7 @@ func NewMediaConnection(id string, peer *Peer, opts ConnectionOptions) (*MediaCo
 // MediaConnection track a connection with a remote Peer
 type MediaConnection struct {
 	BaseConnection
-	open         bool
+	Open         bool
 	remoteStream *MediaStream
 	localStream  *MediaStream
 }
@@ -63,14 +63,14 @@ func (m *MediaConnection) AddStream(tr *webrtc.TrackRemote) {
 	m.Emit(enums.ConnectionEventTypeStream, tr)
 }
 
-func (m *MediaConnection) handleMessage(message models.Message) {
+func (m *MediaConnection) HandleMessage(message *models.Message) error {
 	mtype := message.GetType()
 	payload := message.GetPayload()
 	switch message.GetType() {
 	case enums.ServerMessageTypeAnswer:
 		// Forward to negotiator
 		m.negotiator.handleSDP(message.GetType(), *payload.SDP)
-		m.open = true
+		m.Open = true
 		break
 	case enums.ServerMessageTypeCandidate:
 		m.negotiator.HandleCandidate(payload.Candidate)
@@ -79,6 +79,7 @@ func (m *MediaConnection) handleMessage(message models.Message) {
 		m.log.Warnf("Unrecognized message type:%s from peer:%s", mtype, m.peerID)
 		break
 	}
+	return nil
 }
 
 //Answer open the media connection with the remote peer
@@ -103,10 +104,10 @@ func (m *MediaConnection) Answer(tl webrtc.TrackLocal, options *AnswerOption) {
 	messages := m.GetProvider().GetMessages(m.GetID())
 
 	for _, message := range messages {
-		m.handleMessage(message)
+		m.HandleMessage(&message)
 	}
 
-	m.open = true
+	m.Open = true
 }
 
 //Close allows user to close connection
@@ -128,11 +129,11 @@ func (m *MediaConnection) Close() error {
 		m.BaseConnection.opts.Stream = nil
 	}
 
-	if !m.open {
+	if !m.Open {
 		return nil
 	}
 
-	m.open = false
+	m.Open = false
 
 	m.Emit(enums.ConnectionEventTypeClose, nil)
 	return nil

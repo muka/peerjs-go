@@ -154,7 +154,7 @@ func TestHelloWorld(t *testing.T) {
 		}
 	})
 
-	<-time.After(time.Second * 1)
+	<-time.After(time.Second * 2)
 	assert.True(t, done)
 }
 
