@@ -72,7 +72,7 @@ type Peer struct {
 	lostMessages map[string][]models.Message
 }
 
-//GetSocket return a socket connection
+//GetSocket return this peer's socket connection
 func (p *Peer) GetSocket() *Socket {
 	return p.socket
 }
@@ -80,6 +80,23 @@ func (p *Peer) GetSocket() *Socket {
 //GetOptions return options
 func (p *Peer) GetOptions() Options {
 	return p.opts
+}
+
+//GetSocket return this peer's is open state
+func (p *Peer) GetOpen() bool {
+	return p.open
+}
+
+//GetDestroyed return this peer's is destroyed state
+// true if this peer and all of its connections can no longer be used.
+func (p *Peer) GetDestroyed() bool {
+	return p.destroyed
+}
+
+//GetDisconnected return this peer's is disconnected state
+// returns false if there is an active connection to the PeerServer.
+func (p *Peer) GetDisconnected() bool {
+	return p.disconnected
 }
 
 //AddConnection add the connection to the peer
@@ -238,7 +255,7 @@ func (p *Peer) socketEventHandler(data interface{}) {
 			return
 		}
 		p.EmitError(enums.PeerErrorTypeNetwork, errors.New("Lost connection to server"))
-		p.disconnect()
+		p.Disconnect()
 		break
 	case enums.SocketEventTypeClose:
 		if p.disconnected {
@@ -281,9 +298,9 @@ func (p *Peer) GetMessages(connectionID string) []models.Message {
 //Close closes the peer instance
 func (p *Peer) Close() {
 	if p.lastServerID != "" {
-		p.destroy()
+		p.Destroy()
 	} else {
-		p.disconnect()
+		p.Disconnect()
 	}
 }
 
@@ -384,7 +401,7 @@ func (p *Peer) initialize(id string) error {
 // to the server.
 // Warning: The peer can no longer create or accept connections after being
 // destroyed.
-func (p *Peer) destroy() {
+func (p *Peer) Destroy() {
 
 	if p.destroyed {
 		return
@@ -392,7 +409,7 @@ func (p *Peer) destroy() {
 
 	p.log.Debugf(`Destroy peer with ID:%s`, p.ID)
 
-	p.disconnect()
+	p.Disconnect()
 	p.cleanup()
 
 	p.destroyed = true
@@ -425,11 +442,11 @@ func (p *Peer) cleanupPeer(peerID string) {
 	}
 }
 
-// disconnect disconnects the Peer's connection to the PeerServer. Does not close any
+// Disconnect disconnects the Peer's connection to the PeerServer. Does not close any
 // active connections.
 // Warning: The peer can no longer create or accept connections after being
 // disconnected. It also cannot reconnect to the server.
-func (p *Peer) disconnect() {
+func (p *Peer) Disconnect() {
 	if p.disconnected {
 		return
 	}
@@ -451,8 +468,8 @@ func (p *Peer) disconnect() {
 	p.Emit(enums.PeerEventTypeDisconnected, currentID)
 }
 
-// reconnect Attempts to reconnect with the same ID
-func (p *Peer) reconnect() error {
+// Reconnect Attempts to reconnect with the same ID
+func (p *Peer) Reconnect() error {
 
 	if p.disconnected && !p.destroyed {
 		p.log.Debugf(`Attempting reconnection to server with ID %s`, p.lastServerID)
