@@ -24,7 +24,7 @@ func TestHTTPServerGetID(t *testing.T) {
 	}
 
 	realm := NewRealm()
-	srv := NewHTTPServer(realm, nil, nil, opts)
+	srv := NewHTTPServer(realm, NewAuth(realm, opts), nil, opts)
 
 	go srv.Start()
 	defer srv.Stop()
@@ -53,7 +53,7 @@ func TestHTTPServerNoDiscovery(t *testing.T) {
 	}
 
 	realm := NewRealm()
-	srv := NewHTTPServer(realm, nil, nil, opts)
+	srv := NewHTTPServer(realm, NewAuth(realm, opts), nil, opts)
 
 	go srv.Start()
 	defer srv.Stop()
