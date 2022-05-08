@@ -169,9 +169,10 @@ func (h *HTTPServer) registerHandlers() error {
 		return err
 	}
 
+	// public API
 	err = baseRoute.
 		Path("/{key}/peers").
-		Handler(h.auth.HTTPHandler(h.peersHandler())).
+		Handler(h.peersHandler()).
 		Methods("GET").GetError()
 	if err != nil {
 		return err

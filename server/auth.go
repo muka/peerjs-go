@@ -8,9 +8,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var errInvalidKey = errors.New(ErrorInvalidKey)
-var errUnauthorized = errors.New(http.StatusText(http.StatusUnauthorized))
-
 // NewAuth init a new Auth middleware
 func NewAuth(realm IRealm, opts Options) *Auth {
 	a := new(Auth)
@@ -27,6 +24,19 @@ type Auth struct {
 	realm IRealm
 }
 
+// AuthError is an error that occurs during authentication and contains the original error plus the http status code that should be returned to the client
+type AuthError struct {
+	Err        error
+	StatusCode int
+}
+
+func (e AuthError) Error() string { return e.Err.Error() }
+
+// premade auth errors:
+var errInvalidKey = AuthError{Err: errors.New(ErrorInvalidKey), StatusCode: http.StatusUnauthorized}
+var errInvalidToken = AuthError{Err: errors.New(ErrorInvalidToken), StatusCode: http.StatusUnauthorized}
+var errUnauthorized = AuthError{Err: errors.New(http.StatusText(http.StatusUnauthorized)), StatusCode: http.StatusUnauthorized}
+
 //checkRequest check if the input is valid
 func (a *Auth) checkRequest(key, id, token string) error {
 
@@ -41,14 +51,14 @@ func (a *Auth) checkRequest(key, id, token string) error {
 	client := a.realm.GetClientByID(id)
 
 	if client == nil {
-		return errUnauthorized
+		return errUnauthorized // client not found should return errUnauthorized status code per peerjs server implementation
 	}
 
 	if len(client.GetToken()) > 0 && client.GetToken() != token {
-		return errUnauthorized
+		return errInvalidToken
 	}
 
-	return nil
+	return nil // no error
 }
 
 //WSHandler return a websocket handler middleware
@@ -81,7 +91,7 @@ func (a *Auth) HTTPHandler(handler http.HandlerFunc) http.Handler {
 
 		err := a.checkRequest(key, id, token)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusUnauthorized)
+			http.Error(w, err.Error(), err.(AuthError).StatusCode)
 			return
 		}
 

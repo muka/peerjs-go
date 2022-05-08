@@ -28,11 +28,12 @@ type socketEventWrapper struct {
 }
 
 type PeerError struct {
-	Err error
+	Err  error
 	Type string
 }
-func (e *PeerError) Unwrap() error { return e.Err }
-func (e *PeerError) Error() string { return e.Err.Error() }
+
+func (e PeerError) Unwrap() error { return e.Err }
+func (e PeerError) Error() string { return e.Err.Error() }
 
 //NewPeer initializes a new Peer object
 func NewPeer(id string, opts Options) (*Peer, error) {

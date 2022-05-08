@@ -78,7 +78,7 @@ func TestAuthHandlerClientTokenInvalid(t *testing.T) {
 	err = a.checkRequest(a.opts.Key, id, token)
 
 	err = a.checkRequest(a.opts.Key, id, "wrong")
-	assert.Equal(t, err, errUnauthorized)
+	assert.Equal(t, err, errInvalidToken)
 
 }
 func TestAuthHandlerClientRemoved(t *testing.T) {
