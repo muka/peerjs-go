@@ -394,7 +394,7 @@ func (p *Peer) abort(errType string, err error) error {
 //EmitError emits an error
 func (p *Peer) EmitError(errType string, err error) {
 	p.log.Errorf("Error: %s", err)
-	p.Emit(enums.PeerEventTypeError, &PeerError{
+	p.Emit(enums.PeerEventTypeError, PeerError{
 		Type: errType,
 		Err:  err,
 	})
