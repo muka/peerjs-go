@@ -23,7 +23,7 @@ func getTestOpts(serverOpts server.Options) Options {
 	opts.Host = serverOpts.Host
 	opts.Port = serverOpts.Port
 	opts.Secure = false
-	opts.Debug = 0
+	opts.Debug = 3
 	return opts
 }
 
@@ -32,6 +32,7 @@ func startServer() (*server.PeerServer, server.Options) {
 	opts.Port = 9000
 	opts.Host = "localhost"
 	opts.Path = "/myapp"
+	opts.LogLevel = "debug"
 	return server.New(opts), opts
 }
 
@@ -126,6 +127,9 @@ func TestHelloWorld(t *testing.T) {
 	}
 	defer peerServer.Stop()
 
+	<-time.After(10 * time.Second)
+	println("STARTING PEERS")
+
 	peer1, err := NewPeer(peer1Name, getTestOpts(serverOpts))
 	assert.NoError(t, err)
 	defer peer1.Close()
@@ -137,6 +141,7 @@ func TestHelloWorld(t *testing.T) {
 	// done := false
 	done := false
 	peer2.On("connection", func(data interface{}) {
+		print("peer2 recived connection!")
 		conn2 := data.(*DataConnection)
 		conn2.On("data", func(data interface{}) {
 			// Will print 'hi!'
@@ -148,13 +153,15 @@ func TestHelloWorld(t *testing.T) {
 	conn1, err := peer1.Connect(peer2Name, nil)
 	assert.NoError(t, err)
 	conn1.On("open", func(data interface{}) {
-		for {
-			conn1.Send([]byte("hi!"), false)
-			<-time.After(time.Millisecond * 1000)
-		}
+		print("Conn1 open!")
+		conn1.Send([]byte("hi!"), false)
+		// for {
+		// 	conn1.Send([]byte("hi!"), false)
+		// 	<-time.After(time.Millisecond * 1000)
+		// }
 	})
 
-	<-time.After(time.Second * 2)
+	<-time.After(time.Second * 80)
 	assert.True(t, done)
 }
 
