@@ -27,6 +27,14 @@ type socketEventWrapper struct {
 	Data  interface{}
 }
 
+type PeerError struct {
+	Err  error
+	Type string
+}
+
+func (e PeerError) Unwrap() error { return e.Err }
+func (e PeerError) Error() string { return e.Err.Error() }
+
 //NewPeer initializes a new Peer object
 func NewPeer(id string, opts Options) (*Peer, error) {
 	p := &Peer{
@@ -386,7 +394,10 @@ func (p *Peer) abort(errType string, err error) error {
 //EmitError emits an error
 func (p *Peer) EmitError(errType string, err error) {
 	p.log.Errorf("Error: %s", err)
-	p.Emit(enums.PeerEventTypeError, err)
+	p.Emit(enums.PeerEventTypeError, PeerError{
+		Type: errType,
+		Err:  err,
+	})
 }
 
 func (p *Peer) initialize(id string) error {

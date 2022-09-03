@@ -3,6 +3,7 @@ package peer
 import (
 	"encoding/json"
 	"fmt"
+	"runtime"
 
 	"github.com/muka/peerjs-go/enums"
 	"github.com/muka/peerjs-go/models"
@@ -38,7 +39,12 @@ type Negotiator struct {
 //StartConnection Returns a PeerConnection object set up correctly (for data, media). */
 func (n *Negotiator) StartConnection(opts ConnectionOptions) error {
 
-	peerConnection, err := n.startPeerConnection()
+	connectionReadyForIce := false
+	defer func() {
+		connectionReadyForIce = true
+	}()
+
+	peerConnection, err := n.startPeerConnection(&connectionReadyForIce)
 	if err != nil {
 		return err
 	}
@@ -83,7 +89,7 @@ func (n *Negotiator) StartConnection(opts ConnectionOptions) error {
 }
 
 // Start a PC
-func (n *Negotiator) startPeerConnection() (*webrtc.PeerConnection, error) {
+func (n *Negotiator) startPeerConnection(connectionReadyForIce *bool) (*webrtc.PeerConnection, error) {
 
 	n.log.Debug("Creating RTCPeerConnection")
 
@@ -94,13 +100,13 @@ func (n *Negotiator) startPeerConnection() (*webrtc.PeerConnection, error) {
 		return nil, err
 	}
 
-	n.setupListeners(peerConnection)
+	n.setupListeners(peerConnection, connectionReadyForIce)
 
 	return peerConnection, nil
 }
 
 // Set up various WebRTC listeners
-func (n *Negotiator) setupListeners(peerConnection *webrtc.PeerConnection) {
+func (n *Negotiator) setupListeners(peerConnection *webrtc.PeerConnection, connectionReadyForIce *bool) {
 
 	peerID := n.connection.GetPeerID()
 	connectionID := n.connection.GetID()
@@ -108,6 +114,10 @@ func (n *Negotiator) setupListeners(peerConnection *webrtc.PeerConnection) {
 
 	n.log.Debug("Listening for ICE candidates.")
 	peerConnection.OnICECandidate(func(evt *webrtc.ICECandidate) {
+
+		for !*connectionReadyForIce {
+			runtime.Gosched()
+		}
 
 		peerID := n.connection.GetPeerID()
 		connectionID := n.connection.GetID()

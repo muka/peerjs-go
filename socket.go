@@ -7,10 +7,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gorilla/websocket"
 	"github.com/muka/peerjs-go/emitter"
 	"github.com/muka/peerjs-go/enums"
 	"github.com/muka/peerjs-go/models"
-	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
 )
 
@@ -92,6 +92,7 @@ func (s *Socket) sendHeartbeat() {
 	err = s.Send(res)
 	if err != nil {
 		s.log.Errorf("sendHeartbeat: Failed to send message: %s", err)
+		return
 	}
 
 	s.scheduleHeartbeat()

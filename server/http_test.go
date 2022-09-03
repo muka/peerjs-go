@@ -24,7 +24,7 @@ func TestHTTPServerGetID(t *testing.T) {
 	}
 
 	realm := NewRealm()
-	srv := NewHTTPServer(realm, nil, nil, opts)
+	srv := NewHTTPServer(realm, NewAuth(realm, opts), nil, opts)
 
 	go srv.Start()
 	defer srv.Stop()
@@ -53,7 +53,7 @@ func TestHTTPServerNoDiscovery(t *testing.T) {
 	}
 
 	realm := NewRealm()
-	srv := NewHTTPServer(realm, nil, nil, opts)
+	srv := NewHTTPServer(realm, NewAuth(realm, opts), nil, opts)
 
 	go srv.Start()
 	defer srv.Stop()
@@ -103,7 +103,7 @@ func TestHTTPServerExchange(t *testing.T) {
 	// client not found
 	resp, err := http.Post(url, "application/json", bytes.NewReader(raw))
 	assert.NoError(t, err)
-	assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+	assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 
 	c := NewClient(id, token)
 	srv.realm.SetClient(c, id)
