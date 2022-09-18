@@ -12,7 +12,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-//DefaultKey is the default API key
+// DefaultKey is the default API key
 var DefaultKey = "peerjs"
 
 var socketEvents = []string{
@@ -35,7 +35,7 @@ type PeerError struct {
 func (e PeerError) Unwrap() error { return e.Err }
 func (e PeerError) Error() string { return e.Err.Error() }
 
-//NewPeer initializes a new Peer object
+// NewPeer initializes a new Peer object
 func NewPeer(id string, opts Options) (*Peer, error) {
 	p := &Peer{
 		Emitter:      emitter.NewEmitter(),
@@ -64,7 +64,7 @@ func NewPeer(id string, opts Options) (*Peer, error) {
 	return p, nil
 }
 
-//Peer expose the PeerJS API
+// Peer expose the PeerJS API
 type Peer struct {
 	emitter.Emitter
 	ID           string
@@ -80,34 +80,34 @@ type Peer struct {
 	lostMessages map[string][]models.Message
 }
 
-//GetSocket return this peer's socket connection
+// GetSocket return this peer's socket connection
 func (p *Peer) GetSocket() *Socket {
 	return p.socket
 }
 
-//GetOptions return options
+// GetOptions return options
 func (p *Peer) GetOptions() Options {
 	return p.opts
 }
 
-//GetSocket return this peer's is open state
+// GetSocket return this peer's is open state
 func (p *Peer) GetOpen() bool {
 	return p.open
 }
 
-//GetDestroyed return this peer's is destroyed state
+// GetDestroyed return this peer's is destroyed state
 // true if this peer and all of its connections can no longer be used.
 func (p *Peer) GetDestroyed() bool {
 	return p.destroyed
 }
 
-//GetDisconnected return this peer's is disconnected state
+// GetDisconnected return this peer's is disconnected state
 // returns false if there is an active connection to the PeerServer.
 func (p *Peer) GetDisconnected() bool {
 	return p.disconnected
 }
 
-//AddConnection add the connection to the peer
+// AddConnection add the connection to the peer
 func (p *Peer) AddConnection(peerID string, connection Connection) {
 	if _, ok := p.connections[peerID]; !ok {
 		p.connections[peerID] = make(map[string]Connection)
@@ -115,7 +115,7 @@ func (p *Peer) AddConnection(peerID string, connection Connection) {
 	p.connections[peerID][connection.GetID()] = connection
 }
 
-//RemoveConnection removes the connection from the peer
+// RemoveConnection removes the connection from the peer
 func (p *Peer) RemoveConnection(connection Connection) {
 	peerID := connection.GetPeerID()
 	id := connection.GetID()
@@ -132,7 +132,7 @@ func (p *Peer) RemoveConnection(connection Connection) {
 	}
 }
 
-//GetConnection return a connection based on peerID and connectionID
+// GetConnection return a connection based on peerID and connectionID
 func (p *Peer) GetConnection(peerID string, connectionID string) (Connection, bool) {
 	_, ok := p.connections[peerID]
 	if !ok {
@@ -153,6 +153,9 @@ func (p *Peer) messageHandler(msg SocketEvent) {
 		p.Emit(enums.PeerEventTypeOpen, p.ID)
 		break
 	case enums.ServerMessageTypeError:
+		if msg.Error == nil {
+			msg.Error = errors.New(payload.Msg)
+		}
 		p.abort(enums.PeerErrorTypeServerError, msg.Error)
 		break
 	case enums.ServerMessageTypeIDTaken: // The selected ID is taken.
@@ -294,7 +297,7 @@ func (p *Peer) storeMessage(connectionID string, message models.Message) {
 	p.lostMessages[connectionID] = append(p.lostMessages[connectionID], message)
 }
 
-//GetMessages Retrieve messages from lost message store
+// GetMessages Retrieve messages from lost message store
 func (p *Peer) GetMessages(connectionID string) []models.Message {
 	if messages, ok := p.lostMessages[connectionID]; ok {
 		delete(p.lostMessages, connectionID)
@@ -303,7 +306,7 @@ func (p *Peer) GetMessages(connectionID string) []models.Message {
 	return []models.Message{}
 }
 
-//Close closes the peer instance
+// Close closes the peer instance
 func (p *Peer) Close() {
 	if p.lastServerID != "" {
 		p.Destroy()
@@ -312,8 +315,8 @@ func (p *Peer) Close() {
 	}
 }
 
-//Connect returns a DataConnection to the specified peer. See documentation for a
-//complete list of options.
+// Connect returns a DataConnection to the specified peer. See documentation for a
+// complete list of options.
 func (p *Peer) Connect(peerID string, opts *ConnectionOptions) (*DataConnection, error) {
 
 	if opts == nil {
@@ -349,8 +352,8 @@ func (p *Peer) Connect(peerID string, opts *ConnectionOptions) (*DataConnection,
 	return dataConnection, nil
 }
 
-//Call returns a MediaConnection to the specified peer. See documentation for a
-//complete list of options.
+// Call returns a MediaConnection to the specified peer. See documentation for a
+// complete list of options.
 func (p *Peer) Call(peerID string, track webrtc.TrackLocal, opts *ConnectionOptions) (*MediaConnection, error) {
 
 	if opts == nil {
@@ -391,7 +394,7 @@ func (p *Peer) abort(errType string, err error) error {
 	return err
 }
 
-//EmitError emits an error
+// EmitError emits an error
 func (p *Peer) EmitError(errType string, err error) {
 	p.log.Errorf("Error: %s", err)
 	p.Emit(enums.PeerEventTypeError, PeerError{
