@@ -35,7 +35,7 @@ func NewOptions() Options {
 	}
 }
 
-//Options store Peer options
+// Options store Peer options
 type Options struct {
 	// Key API key for the cloud PeerServer. This is not used for servers other than 0.peerjs.com.
 	Key string
@@ -70,7 +70,7 @@ func NewConnectionOptions() *ConnectionOptions {
 	}
 }
 
-//ConnectionOptions wrap optios for Peer Connect()
+// ConnectionOptions wrap optios for Peer Connect()
 type ConnectionOptions struct {
 	//ConnectionID
 	ConnectionID string
@@ -94,9 +94,11 @@ type ConnectionOptions struct {
 	Debug int8
 	// SDPTransform transformation function for SDP message
 	SDPTransform func(string) string
+	// MediaEngine override the default pion webrtc MediaEngine used in negotiating media channels. This allows you to specify your own supported media formats and parameters.
+	MediaEngine *webrtc.MediaEngine
 }
 
-//AnswerOption wraps answer options
+// AnswerOption wraps answer options
 type AnswerOption struct {
 	// SDPTransform transformation function for SDP message
 	SDPTransform func(string) string

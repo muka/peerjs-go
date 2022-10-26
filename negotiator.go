@@ -14,18 +14,20 @@ import (
 // DefaultBrowser is the browser name
 const DefaultBrowser = "peerjs-go"
 
-func newWebrtcAPI() *webrtc.API {
-	mediaEngine := new(webrtc.MediaEngine)
-	mediaEngine.RegisterDefaultCodecs()
+func newWebrtcAPI(mediaEngine *webrtc.MediaEngine) *webrtc.API {
+	if mediaEngine == nil {
+		mediaEngine = new(webrtc.MediaEngine)
+		mediaEngine.RegisterDefaultCodecs()
+	}
 	return webrtc.NewAPI(webrtc.WithMediaEngine(mediaEngine))
 }
 
-//NewNegotiator initiate a new negotiator
+// NewNegotiator initiate a new negotiator
 func NewNegotiator(conn Connection, opts ConnectionOptions) *Negotiator {
 	return &Negotiator{
 		connection: conn,
 		log:        createLogger("negotiator", opts.Debug),
-		webrtc:     newWebrtcAPI(),
+		webrtc:     newWebrtcAPI(opts.MediaEngine),
 	}
 }
 
@@ -36,7 +38,7 @@ type Negotiator struct {
 	webrtc     *webrtc.API
 }
 
-//StartConnection Returns a PeerConnection object set up correctly (for data, media). */
+// StartConnection Returns a PeerConnection object set up correctly (for data, media). */
 func (n *Negotiator) StartConnection(opts ConnectionOptions) error {
 
 	connectionReadyForIce := false
