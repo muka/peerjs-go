@@ -352,8 +352,12 @@ func (p *Peer) Connect(peerID string, opts *ConnectionOptions) (*DataConnection,
 	return dataConnection, nil
 }
 
-// Call returns a MediaConnection to the specified peer. See documentation for a
-// complete list of options.
+// Call returns a MediaConnection to the specified peer. See documentation for a complete list of options.
+// To add more than one track to the call, set the stream parameter in the ConnectionOptions.
+//   - Example:
+//     connectionOpts := *peer.NewConnectionOptions()
+//     connectionOpts.Stream = peer.NewMediaStreamWithTrack([]peer.MediaStreamTrack{track1, track2})
+//     Peer.Call("peer-id", nil, &connectionOpts)
 func (p *Peer) Call(peerID string, track webrtc.TrackLocal, opts *ConnectionOptions) (*MediaConnection, error) {
 
 	if opts == nil {
@@ -370,13 +374,15 @@ func (p *Peer) Call(peerID string, track webrtc.TrackLocal, opts *ConnectionOpti
 		return nil, err
 	}
 
-	if track == nil {
+	if track == nil && opts.Stream != nil {
 		err := errors.New("To call a peer, you must provide a stream")
 		p.log.Error(err)
 		return nil, err
 	}
 
-	opts.Stream = NewMediaStreamWithTrack([]MediaStreamTrack{track})
+	if opts.Stream == nil {
+		opts.Stream = NewMediaStreamWithTrack([]MediaStreamTrack{track})
+	}
 
 	mediaConnection, err := NewMediaConnection(peerID, p, *opts)
 	if err != nil {
