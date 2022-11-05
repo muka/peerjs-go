@@ -7,7 +7,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-//New creates a new PeerServer
+// New creates a new PeerServer
 func New(opts Options) *PeerServer {
 
 	s := new(PeerServer)
@@ -34,7 +34,7 @@ func New(opts Options) *PeerServer {
 	return s
 }
 
-//PeerServer wrap the peer server functionalities
+// PeerServer wrap the peer server functionalities
 type PeerServer struct {
 	emitter.Emitter
 	log                    *logrus.Entry
@@ -99,6 +99,24 @@ func (p *PeerServer) Start() error {
 	var err error
 	go func() {
 		err = p.http.Start()
+		if err != nil {
+			p.Emit("error", err)
+		}
+	}()
+
+	<-time.After(time.Millisecond * 500)
+	if err == nil {
+		p.log.Infof("Peer server started (:%d)", p.http.opts.Port)
+	}
+	return err
+}
+
+// Start start the TLS peer server
+func (p *PeerServer) StartTLS(certFile, keyFile string) error {
+
+	var err error
+	go func() {
+		err = p.http.StartTLS(certFile, keyFile)
 		if err != nil {
 			p.Emit("error", err)
 		}
