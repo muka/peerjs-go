@@ -180,7 +180,7 @@ func (h *HTTPServer) registerHandlers() error {
 
 	// handle WS route
 	err = baseRoute.
-		Path(fmt.Sprintf("/%s", h.opts.Key)).
+		Path("/peerjs").
 		Handler(h.auth.WSHandler(h.wss.Handler())).
 		Methods("GET").GetError()
 	if err != nil {
