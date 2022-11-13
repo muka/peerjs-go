@@ -56,7 +56,12 @@ func (n *Negotiator) StartConnection(opts ConnectionOptions) error {
 
 	if n.connection.GetType() == enums.ConnectionTypeMedia && opts.Stream != nil {
 		for _, track := range opts.Stream.GetTracks() {
-			peerConnection.AddTrack(track.(webrtc.TrackLocal))
+			rtpSender, err := peerConnection.AddTrack(track.(webrtc.TrackLocal))
+			if err != nil {
+				n.log.Warn("Error adding track to connection:", err)
+			} else {
+				go n.listenForRTCPPackets(rtpSender)
+			}
 		}
 	}
 
@@ -88,6 +93,18 @@ func (n *Negotiator) StartConnection(opts ConnectionOptions) error {
 	}
 
 	return nil
+}
+
+func (n *Negotiator) listenForRTCPPackets(rtpSender *webrtc.RTPSender) {
+	// Read incoming RTCP packets
+	// Before these packets are returned they are processed by interceptors.
+	// For things like NACK this needs to be called.
+	rtcpBuf := make([]byte, 1500)
+	for {
+		if _, _, rtcpErr := rtpSender.Read(rtcpBuf); rtcpErr != nil {
+			return
+		}
+	}
 }
 
 // Start a PC
