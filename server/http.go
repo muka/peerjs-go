@@ -13,7 +13,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-//NewOptions create default options
+// NewOptions create default options
 func NewOptions() Options {
 	return Options{
 		Port:            9000,
@@ -29,7 +29,7 @@ func NewOptions() Options {
 	}
 }
 
-//Options peer server options
+// Options peer server options
 type Options struct {
 	Port            int
 	Host            string
@@ -43,7 +43,7 @@ type Options struct {
 	CleanupOutMsgs  int
 }
 
-//HTTPServer peer server
+// HTTPServer peer server
 type HTTPServer struct {
 	opts           Options
 	realm          IRealm
@@ -180,7 +180,7 @@ func (h *HTTPServer) registerHandlers() error {
 
 	// handle WS route
 	err = baseRoute.
-		Path(fmt.Sprintf("/%s", h.opts.Key)).
+		Path("/peerjs").
 		Handler(h.auth.WSHandler(h.wss.Handler())).
 		Methods("GET").GetError()
 	if err != nil {
@@ -208,7 +208,7 @@ func (h *HTTPServer) registerHandlers() error {
 	return nil
 }
 
-//Start start the HTTP server
+// Start start the HTTP server
 func (h *HTTPServer) Start() error {
 
 	err := h.registerHandlers()
@@ -234,7 +234,33 @@ func (h *HTTPServer) Start() error {
 	return h.http.ListenAndServe()
 }
 
-//Stop stops the HTTP server
+// Start start the HTTPS server
+func (h *HTTPServer) StartTLS(certFile, keyFile string) error {
+
+	err := h.registerHandlers()
+	if err != nil {
+		return err
+	}
+
+	c := cors.New(cors.Options{
+		AllowedOrigins:   []string{"*"},
+		AllowCredentials: true,
+	})
+
+	handler := c.Handler(h.router)
+
+	h.http = &http.Server{
+		Addr:           fmt.Sprintf("%s:%d", h.opts.Host, h.opts.Port),
+		Handler:        handler,
+		ReadTimeout:    10 * time.Second,
+		WriteTimeout:   10 * time.Second,
+		MaxHeaderBytes: 1 << 20,
+	}
+
+	return h.http.ListenAndServeTLS(certFile, keyFile)
+}
+
+// Stop stops the HTTP server
 func (h *HTTPServer) Stop() error {
 	return h.http.Close()
 }
