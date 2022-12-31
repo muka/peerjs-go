@@ -3,6 +3,7 @@ package peer
 import (
 	"encoding/json"
 	"fmt"
+	"net"
 	"strconv"
 	"sync"
 	"time"
@@ -21,7 +22,7 @@ type SocketEvent struct {
 	Error   error
 }
 
-//NewSocket create a socket instance
+// NewSocket create a socket instance
 func NewSocket(opts Options) *Socket {
 	s := &Socket{
 		Emitter: emitter.NewEmitter(),
@@ -32,7 +33,7 @@ func NewSocket(opts Options) *Socket {
 	return s
 }
 
-//Socket abstract websocket exposing an event emitter like interface
+// Socket abstract websocket exposing an event emitter like interface
 type Socket struct {
 	emitter.Emitter
 	id           string
@@ -98,7 +99,7 @@ func (s *Socket) sendHeartbeat() {
 	s.scheduleHeartbeat()
 }
 
-//Start initiate the connection
+// Start initiate the connection
 func (s *Socket) Start(id string, token string) error {
 
 	if !s.disconnected {
@@ -144,6 +145,10 @@ func (s *Socket) Start(id string, token string) error {
 					s.log.Debugf("websocket closed: %s", err)
 					s.Emit(enums.SocketEventTypeDisconnected, SocketEvent{enums.SocketEventTypeDisconnected, nil, err})
 					return
+				} else if opErr, ok := err.(*net.OpError); ok {
+					s.log.Debugf("websocket closed: %s OpErr Op %s", opErr, opErr.Op)
+					s.Emit(enums.SocketEventTypeDisconnected, SocketEvent{enums.SocketEventTypeDisconnected, nil, err})
+					return
 				}
 				s.log.Warnf("websocket read error: %s", err)
 				continue
@@ -170,7 +175,7 @@ func (s *Socket) Start(id string, token string) error {
 	return nil
 }
 
-//Close close the websocket connection
+// Close close the websocket connection
 func (s *Socket) Close() error {
 	if s.disconnected {
 		return nil
@@ -192,7 +197,7 @@ func (s *Socket) Close() error {
 	return err
 }
 
-//Send send a message
+// Send send a message
 func (s *Socket) Send(msg []byte) error {
 	if s.conn == nil {
 		return nil

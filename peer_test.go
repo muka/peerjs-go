@@ -127,7 +127,7 @@ func TestHelloWorld(t *testing.T) {
 	}
 	defer peerServer.Stop()
 
-	<-time.After(10 * time.Second)
+	<-time.After(4 * time.Second)
 	println("STARTING PEERS")
 
 	peer1, err := NewPeer(peer1Name, getTestOpts(serverOpts))
@@ -155,14 +155,20 @@ func TestHelloWorld(t *testing.T) {
 	conn1.On("open", func(data interface{}) {
 		print("Conn1 open!")
 		conn1.Send([]byte("hi!"), false)
-		// for {
-		// 	conn1.Send([]byte("hi!"), false)
-		// 	<-time.After(time.Millisecond * 1000)
-		// }
+		for {
+			conn1.Send([]byte("hi!"), false)
+			<-time.After(time.Millisecond * 1000)
+		}
 	})
 
-	<-time.After(time.Second * 80)
-	assert.True(t, done)
+	select {
+	case <-time.After(time.Second * 20):
+		assert.True(t, done)
+	default:
+		if done == true {
+			return
+		}
+	}
 }
 
 func TestLongPayload(t *testing.T) {
